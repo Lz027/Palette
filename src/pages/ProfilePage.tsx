@@ -242,78 +242,61 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Profile Info */}
+      {/* Profile Info - Name and Edit button inline */}
       <div className="pt-14 px-1">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div>
-            <h1 className="font-display text-2xl font-bold">{displayName || user.name}</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <h1 className="font-display text-2xl font-bold">{displayName || user.name}</h1>
+              {!isEditing ? (
+                <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="h-8 w-8 p-0">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              ) : (
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" onClick={handleCancelEdit} className="h-8 w-8 p-0">
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" onClick={handleSaveProfile} disabled={isSaving} className="h-8 w-8 p-0 gradient-primary text-primary-foreground">
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  </Button>
+                </div>
+              )}
+            </div>
             <p className="text-muted-foreground">{user.email}</p>
-            {bio && <p className="text-sm text-muted-foreground mt-2 max-w-md">{bio}</p>}
+            {bio && !isEditing && <p className="text-sm text-muted-foreground mt-2 max-w-md">{bio}</p>}
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1"><FolderKanban className="h-4 w-4" />{boards.length} workspaces</span>
-            <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{totalCards} cards</span>
+            <span className="flex items-center gap-1"><FolderKanban className="h-4 w-4" />{boards.length}</span>
+            <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{totalCards}</span>
           </div>
         </div>
       </div>
 
-      {/* Edit Profile - Collapsed by default */}
-      <Card className="glass-card">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="font-display text-lg">{isEditing ? 'Edit Profile' : 'Profile Information'}</CardTitle>
-          {!isEditing ? (
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}><Pencil className="h-4 w-4 mr-2" />Edit</Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={handleCancelEdit}><X className="h-4 w-4 mr-2" />Cancel</Button>
-              <Button size="sm" onClick={handleSaveProfile} disabled={isSaving} className="gradient-primary text-primary-foreground">
-                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}Save
-              </Button>
-            </div>
-          )}
-        </CardHeader>
-        
-        <CardContent className="space-y-4">
-          {isEditing ? (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="displayName">Display Name</Label>
-                  <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value.slice(0, INPUT_LIMITS.DISPLAY_NAME))} maxLength={INPUT_LIMITS.DISPLAY_NAME} className="mt-1" placeholder="Your name" />
-                  <p className="text-xs text-muted-foreground mt-1">{displayName.length}/{INPUT_LIMITS.DISPLAY_NAME}</p>
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={user.email} disabled className="mt-1 bg-muted" />
-                  <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
-                </div>
+      {/* Edit Form - Only visible when editing */}
+      {isEditing && (
+        <Card className="glass-card">
+          <CardContent className="pt-6 space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="displayName">Display Name</Label>
+                <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value.slice(0, INPUT_LIMITS.DISPLAY_NAME))} maxLength={INPUT_LIMITS.DISPLAY_NAME} className="mt-1" placeholder="Your name" />
+                <p className="text-xs text-muted-foreground mt-1">{displayName.length}/{INPUT_LIMITS.DISPLAY_NAME}</p>
               </div>
               <div>
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value.slice(0, INPUT_LIMITS.BIO))} maxLength={INPUT_LIMITS.BIO} placeholder="Tell us about yourself..." className="mt-1 min-h-[100px]" />
-                <p className="text-xs text-muted-foreground mt-1">{bio.length}/{INPUT_LIMITS.BIO}</p>
-              </div>
-            </>
-          ) : (
-            <div className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <Label className="text-muted-foreground text-xs uppercase">Display Name</Label>
-                  <p className="font-medium text-lg">{displayName || user.name}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground text-xs uppercase">Email</Label>
-                  <p className="font-medium">{user.email}</p>
-                </div>
-              </div>
-              <div>
-                <Label className="text-muted-foreground text-xs uppercase">Bio</Label>
-                <p className="text-muted-foreground">{bio || "No bio yet. Click Edit to add one."}</p>
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={user.email} disabled className="mt-1 bg-muted" />
+                <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <div>
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value.slice(0, INPUT_LIMITS.BIO))} maxLength={INPUT_LIMITS.BIO} placeholder="Tell us about yourself..." className="mt-1 min-h-[100px]" />
+              <p className="text-xs text-muted-foreground mt-1">{bio.length}/{INPUT_LIMITS.BIO}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <StatusPicker />
 

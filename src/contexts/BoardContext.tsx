@@ -42,6 +42,9 @@ interface BoardContextType {
 
 const BoardContext = createContext<BoardContextType | undefined>(undefined);
 
+// Fallback ID generator for browsers without crypto.randomUUID
+const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString(36);
+
 export function BoardProvider({ children }: { children: React.ReactNode }) {
   const [boards, setBoards] = useState<Board[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,11 +90,11 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
 
     const columns = template === 'kanban' 
       ? [
-          { id: crypto.randomUUID(), title: 'To Do', cards: [] },
-          { id: crypto.randomUUID(), title: 'In Progress', cards: [] },
-          { id: crypto.randomUUID(), title: 'Done', cards: [] }
+          { id: generateId(), title: 'To Do', cards: [] },
+          { id: generateId(), title: 'In Progress', cards: [] },
+          { id: generateId(), title: 'Done', cards: [] }
         ]
-      : [{ id: crypto.randomUUID(), title: 'Tasks', cards: [] }];
+      : [{ id: generateId(), title: 'Tasks', cards: [] }];
 
     const { data, error } = await supabase
       .from('boards')
@@ -105,7 +108,10 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Create board error:', error);
+      throw error;
+    }
 
     const newBoard: Board = {
       id: data.id,
@@ -132,7 +138,10 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       })
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Update board error:', error);
+      throw error;
+    }
 
     setBoards(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
   };
@@ -143,7 +152,10 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       .delete()
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Delete board error:', error);
+      throw error;
+    }
 
     setBoards(prev => prev.filter(b => b.id !== id));
   };
@@ -159,7 +171,10 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       .update({ is_favorite: newValue })
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Toggle favorite error:', error);
+      throw error;
+    }
 
     setBoards(prev => prev.map(b => b.id === id ? { ...b, isFavorite: newValue } : b));
   };
@@ -168,7 +183,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     const board = boards.find(b => b.id === boardId);
     if (!board) return;
 
-    const newColumn = { id: crypto.randomUUID(), title, cards: [] };
+    const newColumn = { id: generateId(), title, cards: [] };
     const updatedColumns = [...board.columns, newColumn];
 
     await updateBoard(boardId, { columns: updatedColumns });
@@ -198,7 +213,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     const board = boards.find(b => b.id === boardId);
     if (!board) return;
 
-    const newCard = { ...card, id: crypto.randomUUID() };
+    const newCard = { ...card, id: generateId() };
     const updatedColumns = board.columns.map(c => 
       c.id === columnId ? { ...c, cards: [...c.cards, newCard] } : c
     );

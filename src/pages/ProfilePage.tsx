@@ -12,7 +12,6 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { displayNameSchema, bioSchema, validateInput, INPUT_LIMITS } from '@/lib/validation';
 import { supabase } from '@/integrations/supabase/client';
-import { StatusPicker } from '@/components/features/StatusPicker';
 
 export default function ProfilePage() {
   const { user, logout, uploadAvatar } = useAuth();
@@ -242,34 +241,33 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Profile Info - Name and Edit button inline */}
+      {/* Profile Info - Name left, Edit button far right */}
       <div className="pt-14 px-1">
         <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <h1 className="font-display text-2xl font-bold">{displayName || user.name}</h1>
-              {!isEditing ? (
-                <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="h-8 w-8 p-0">
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              ) : (
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" onClick={handleCancelEdit} className="h-8 w-8 p-0">
-                    <X className="h-4 w-4" />
-                  </Button>
-                  <Button size="sm" onClick={handleSaveProfile} disabled={isSaving} className="h-8 w-8 p-0 gradient-primary text-primary-foreground">
-                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  </Button>
-                </div>
-              )}
-            </div>
+          <div>
+            <h1 className="font-display text-2xl font-bold">{displayName || user.name}</h1>
             <p className="text-muted-foreground">{user.email}</p>
             {bio && !isEditing && <p className="text-sm text-muted-foreground mt-2 max-w-md">{bio}</p>}
           </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1"><FolderKanban className="h-4 w-4" />{boards.length}</span>
-            <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{totalCards}</span>
-          </div>
+          
+          {/* Edit Profile button - far right */}
+          {!isEditing ? (
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit Profile
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleSaveProfile} disabled={isSaving} className="gradient-primary text-primary-foreground">
+                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                Save
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -297,8 +295,6 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       )}
-
-      <StatusPicker />
 
       {/* Stats */}
       <Card className="glass-card">

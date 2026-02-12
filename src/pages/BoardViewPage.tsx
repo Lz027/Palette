@@ -30,7 +30,7 @@ const columnTypeConfig: Record<ExtendedColumnType, { icon: React.ElementType; la
 
 export default function BoardViewPage() {
   const { boardId } = useParams<{ boardId: string }>();
-  const { boards, toggleFavorite, addColumn, deleteColumn, updateColumnName } = useBoards();
+  const { boards, toggleFavorite, addColumn, deleteColumn, updateColumn } = useBoards();
   const { focusMode, getColumnTypes } = useFocus();
   
   const board = boards.find(b => b.id === boardId);
@@ -50,7 +50,6 @@ export default function BoardViewPage() {
     return <Navigate to="/boards" replace />;
   }
 
-  // ... keep existing code (handleAddColumn, handleAddRow, handleCellChange, handleDeleteRow, handleColumnTypeChange, getColumnType, startEditingColumn, saveColumnName, cancelEditingColumn)
   const handleAddColumn = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newColumnName.trim()) return;
@@ -89,7 +88,7 @@ export default function BoardViewPage() {
 
   const saveColumnName = (colId: string) => {
     if (editingColumnName.trim() && board) {
-      updateColumnName(board.id, colId, editingColumnName.trim());
+      updateColumn(board.id, colId, editingColumnName.trim());
     }
     setEditingColumnId(null);
     setEditingColumnName('');

@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './AuthContext';
 
 // Types
 interface Card {
@@ -21,130 +23,205 @@ interface Board {
   isFavorite: boolean;
   columns: Column[];
   createdAt: Date;
+  userId: string;
 }
 
 interface BoardContextType {
   boards: Board[];
-  createBoard: (name: string, color: string, template?: string) => Board;
-  updateBoard: (id: string, updates: Partial<Board>) => void;
-  deleteBoard: (id: string) => void;
-  toggleFavorite: (id: string) => void;
-  addCard: (boardId: string, columnId: string, card: Omit<Card, 'id'>) => void;
-  moveCard: (boardId: string, fromColumnId: string, toColumnId: string, cardId: string) => void;
+  createBoard: (name: string, color: string, template?: string) => Promise<Board>;
+  updateBoard: (id: string, updates: Partial<Board>) => Promise<void>;
+  deleteBoard: (id: string) => Promise<void>;
+  toggleFavorite: (id: string) => Promise<void>;
+  addCard: (boardId: string, columnId: string, card: Omit<Card, 'id'>) => Promise<void>;
+  moveCard: (boardId: string, fromColumnId: string, toColumnId: string, cardId: string) => Promise<void>;
+  addColumn: (boardId: string, title: string) => Promise<void>;
+  updateColumn: (boardId: string, columnId: string, title: string) => Promise<void>;
+  deleteColumn: (boardId: string, columnId: string) => Promise<void>;
+  isLoading: boolean;
 }
 
 const BoardContext = createContext<BoardContextType | undefined>(undefined);
 
-// Local storage key
-const STORAGE_KEY = 'palette_boards';
-
-// Default boards for demo
-const defaultBoards: Board[] = [
-  {
-    id: '1',
-    name: 'My First Workspace',
-    color: 'coral',
-    isFavorite: true,
-    createdAt: new Date(),
-    columns: [
-      { id: 'c1', title: 'To Do', cards: [{ id: 'card1', title: 'Welcome to PALETTE!' }] },
-      { id: 'c2', title: 'In Progress', cards: [] },
-      { id: 'c3', title: 'Done', cards: [] }
-    ]
-  }
-];
-
 export function BoardProvider({ children }: { children: React.ReactNode }) {
   const [boards, setBoards] = useState<Board[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
-  // Load from localStorage on mount
+  // Load boards from Supabase
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        // Convert date strings back to Date objects
-        parsed.forEach((b: Board) => {
-          b.createdAt = new Date(b.createdAt);
-        });
-        setBoards(parsed);
-      } catch (e) {
-        setBoards(defaultBoards);
+    if (!user) {
+      setBoards([]);
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchBoards = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('boards')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching boards:', error);
+      } else {
+        setBoards(data.map(b => ({
+          id: b.id,
+          name: b.name,
+          color: b.color,
+          isFavorite: b.is_favorite,
+          columns: b.columns || [],
+          createdAt: new Date(b.created_at),
+          userId: b.user_id
+        })));
       }
-    } else {
-      setBoards(defaultBoards);
-    }
-    setLoaded(true);
-  }, []);
+      setIsLoading(false);
+    };
 
-  // Save to localStorage on change
-  useEffect(() => {
-    if (loaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(boards));
-    }
-  }, [boards, loaded]);
+    fetchBoards();
+  }, [user]);
 
-  const createBoard = (name: string, color: string, template?: string): Board => {
+  const createBoard = async (name: string, color: string, template?: string): Promise<Board> => {
+    if (!user) throw new Error('Not authenticated');
+
     const columns = template === 'kanban' 
-      ? [{ id: Date.now().toString(), title: 'To Do', cards: [] }, { id: (Date.now()+1).toString(), title: 'In Progress', cards: [] }, { id: (Date.now()+2).toString(), title: 'Done', cards: [] }]
-      : [{ id: Date.now().toString(), title: 'Tasks', cards: [] }];
+      ? [
+          { id: crypto.randomUUID(), title: 'To Do', cards: [] },
+          { id: crypto.randomUUID(), title: 'In Progress', cards: [] },
+          { id: crypto.randomUUID(), title: 'Done', cards: [] }
+        ]
+      : [{ id: crypto.randomUUID(), title: 'Tasks', cards: [] }];
+
+    const { data, error } = await supabase
+      .from('boards')
+      .insert({
+        name,
+        color,
+        columns,
+        user_id: user.id,
+        is_favorite: false
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
 
     const newBoard: Board = {
-      id: Date.now().toString(),
-      name,
-      color,
-      isFavorite: false,
-      columns,
-      createdAt: new Date()
+      id: data.id,
+      name: data.name,
+      color: data.color,
+      isFavorite: data.is_favorite,
+      columns: data.columns,
+      createdAt: new Date(data.created_at),
+      userId: data.user_id
     };
 
     setBoards(prev => [newBoard, ...prev]);
     return newBoard;
   };
 
-  const updateBoard = (id: string, updates: Partial<Board>) => {
+  const updateBoard = async (id: string, updates: Partial<Board>) => {
+    const { error } = await supabase
+      .from('boards')
+      .update({
+        name: updates.name,
+        color: updates.color,
+        is_favorite: updates.isFavorite,
+        columns: updates.columns
+      })
+      .eq('id', id);
+
+    if (error) throw error;
+
     setBoards(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
   };
 
-  const deleteBoard = (id: string) => {
+  const deleteBoard = async (id: string) => {
+    const { error } = await supabase
+      .from('boards')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
     setBoards(prev => prev.filter(b => b.id !== id));
   };
 
-  const toggleFavorite = (id: string) => {
-    setBoards(prev => prev.map(b => b.id === id ? { ...b, isFavorite: !b.isFavorite } : b));
+  const toggleFavorite = async (id: string) => {
+    const board = boards.find(b => b.id === id);
+    if (!board) return;
+
+    const newValue = !board.isFavorite;
+    
+    const { error } = await supabase
+      .from('boards')
+      .update({ is_favorite: newValue })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    setBoards(prev => prev.map(b => b.id === id ? { ...b, isFavorite: newValue } : b));
   };
 
-  const addCard = (boardId: string, columnId: string, card: Omit<Card, 'id'>) => {
-    const newCard: Card = { ...card, id: Date.now().toString() };
-    setBoards(prev => prev.map(b => {
-      if (b.id !== boardId) return b;
-      return {
-        ...b,
-        columns: b.columns.map(c => c.id === columnId ? { ...c, cards: [...c.cards, newCard] } : c)
-      };
-    }));
+  const addColumn = async (boardId: string, title: string) => {
+    const board = boards.find(b => b.id === boardId);
+    if (!board) return;
+
+    const newColumn = { id: crypto.randomUUID(), title, cards: [] };
+    const updatedColumns = [...board.columns, newColumn];
+
+    await updateBoard(boardId, { columns: updatedColumns });
   };
 
-  const moveCard = (boardId: string, fromColumnId: string, toColumnId: string, cardId: string) => {
-    setBoards(prev => prev.map(b => {
-      if (b.id !== boardId) return b;
-      const fromCol = b.columns.find(c => c.id === fromColumnId);
-      const card = fromCol?.cards.find(c => c.id === cardId);
-      if (!card) return b;
-      
-      return {
-        ...b,
-        columns: b.columns.map(c => {
-          if (c.id === fromColumnId) return { ...c, cards: c.cards.filter(card => card.id !== cardId) };
-          if (c.id === toColumnId) return { ...c, cards: [...c.cards, card] };
-          return c;
-        })
-      };
-    }));
+  const updateColumn = async (boardId: string, columnId: string, title: string) => {
+    const board = boards.find(b => b.id === boardId);
+    if (!board) return;
+
+    const updatedColumns = board.columns.map(c => 
+      c.id === columnId ? { ...c, title } : c
+    );
+
+    await updateBoard(boardId, { columns: updatedColumns });
   };
 
-  if (!loaded) return null;
+  const deleteColumn = async (boardId: string, columnId: string) => {
+    const board = boards.find(b => b.id === boardId);
+    if (!board) return;
+
+    const updatedColumns = board.columns.filter(c => c.id !== columnId);
+
+    await updateBoard(boardId, { columns: updatedColumns });
+  };
+
+  const addCard = async (boardId: string, columnId: string, card: Omit<Card, 'id'>) => {
+    const board = boards.find(b => b.id === boardId);
+    if (!board) return;
+
+    const newCard = { ...card, id: crypto.randomUUID() };
+    const updatedColumns = board.columns.map(c => 
+      c.id === columnId ? { ...c, cards: [...c.cards, newCard] } : c
+    );
+
+    await updateBoard(boardId, { columns: updatedColumns });
+  };
+
+  const moveCard = async (boardId: string, fromColumnId: string, toColumnId: string, cardId: string) => {
+    const board = boards.find(b => b.id === boardId);
+    if (!board) return;
+
+    const fromCol = board.columns.find(c => c.id === fromColumnId);
+    const card = fromCol?.cards.find(c => c.id === cardId);
+    if (!card) return;
+
+    const updatedColumns = board.columns.map(c => {
+      if (c.id === fromColumnId) return { ...c, cards: c.cards.filter(card => card.id !== cardId) };
+      if (c.id === toColumnId) return { ...c, cards: [...c.cards, card] };
+      return c;
+    });
+
+    await updateBoard(boardId, { columns: updatedColumns });
+  };
 
   return (
     <BoardContext.Provider value={{ 
@@ -154,7 +231,11 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       deleteBoard, 
       toggleFavorite,
       addCard,
-      moveCard
+      moveCard,
+      addColumn,
+      updateColumn,
+      deleteColumn,
+      isLoading
     }}>
       {children}
     </BoardContext.Provider>

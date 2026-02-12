@@ -117,6 +117,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .from('avatars')
       .getPublicUrl(filePath);
 
+    // Update profile in database
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: publicUrl })
+      .eq('user_id', user.id);
+
+    if (updateError) {
+      console.error('Profile update error:', updateError);
+      return null;
+    }
+
+    // Update local user state
+    setUser(prev => prev ? { ...prev, avatar: publicUrl } : null);
+
     return publicUrl;
   };
 

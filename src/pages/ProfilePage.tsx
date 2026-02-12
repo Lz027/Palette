@@ -26,42 +26,45 @@ export default function ProfilePage() {
   const [bio, setBio] = useState('');
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      if (!user) return;
+  // Load profile data
+  const loadProfileData = async () => {
+    if (!user) return;
 
-      try {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('display_name, bio, avatar_url')
-          .eq('user_id', user.id)
-          .maybeSingle();
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('display_name, bio, avatar_url')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-        if (error) throw error;
+      if (error) throw error;
 
-        if (profile) {
-          setDisplayName((profile.display_name || user.name || '').slice(0, INPUT_LIMITS.DISPLAY_NAME));
-          setBio((profile.bio || '').slice(0, INPUT_LIMITS.BIO));
-        } else {
-          setDisplayName((user.name || '').slice(0, INPUT_LIMITS.DISPLAY_NAME));
-        }
-
-        const { data: bannerFiles } = await supabase.storage
-          .from('banners')
-          .list(user.id, { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
-
-        if (bannerFiles && bannerFiles.length > 0) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('banners')
-            .getPublicUrl(`${user.id}/${bannerFiles[0].name}`);
-          setBannerUrl(publicUrl);
-        }
-      } catch (error) {
-        console.error('Error loading profile:', error);
+      if (profile) {
+        setDisplayName((profile.display_name || user.name || '').slice(0, INPUT_LIMITS.DISPLAY_NAME));
+        setBio((profile.bio || '').slice(0, INPUT_LIMITS.BIO));
+      } else {
+        setDisplayName((user.name || '').slice(0, INPUT_LIMITS.DISPLAY_NAME));
+        setBio('');
       }
-    };
 
-    loadProfile();
+      // Load banner
+      const { data: bannerFiles } = await supabase.storage
+        .from('banners')
+        .list(user.id, { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
+
+      if (bannerFiles && bannerFiles.length > 0) {
+        const { data: { publicUrl } } = supabase.storage
+          .from('banners')
+          .getPublicUrl(`${user.id}/${bannerFiles[0].name}`);
+        setBannerUrl(publicUrl);
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadProfileData();
   }, [user]);
 
   if (!user) return null;
@@ -186,11 +189,15 @@ export default function ProfilePage() {
   };
 
   const handleCancelEdit = () => {
-    if (user) {
-      setDisplayName((user.name || '').slice(0, INPUT_LIMITS.DISPLAY_NAME));
-      setBio('');
-    }
+    // Reload saved values instead of resetting
+    loadProfileData();
     setIsEditing(false);
+  };
+
+  const handleStartEdit = async () => {
+    // Reload fresh data before editing
+    await loadProfileData();
+    setIsEditing(true);
   };
 
   return (
@@ -252,7 +259,7 @@ export default function ProfilePage() {
           
           {/* Edit Profile button - far right */}
           {!isEditing ? (
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+            <Button variant="outline" size="sm" onClick={handleStartEdit}>
               <Pencil className="h-4 w-4 mr-2" />
               Edit Profile
             </Button>

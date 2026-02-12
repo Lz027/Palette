@@ -34,6 +34,16 @@ export default function BoardViewPage() {
   const { focusMode, getColumnTypes } = useFocus();
   
   const board = boards.find(b => b.id === boardId);
+
+  // DEBUG: Log board data
+  console.log('=== BOARD DEBUG ===');
+  console.log('Board ID:', boardId);
+  console.log('Board found:', !!board);
+  console.log('Board data:', board);
+  console.log('Board columns:', board?.columns);
+  console.log('Columns count:', board?.columns?.length);
+  console.log('First column:', board?.columns?.[0]);
+  
   const [newColumnName, setNewColumnName] = useState('');
   const [rows, setRows] = useState<{ id: string; cells: Record<string, string> }[]>([
     { id: '1', cells: {} },
@@ -47,12 +57,14 @@ export default function BoardViewPage() {
   const [pendingFileCell, setPendingFileCell] = useState<{ rowId: string; colId: string } | null>(null);
 
   if (!board) {
+    console.log('Board not found, redirecting...');
     return <Navigate to="/boards" replace />;
   }
 
   const handleAddColumn = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newColumnName.trim()) return;
+    console.log('Adding column:', newColumnName);
     addColumn(board.id, newColumnName.trim());
     setNewColumnName('');
   };
@@ -106,11 +118,16 @@ export default function BoardViewPage() {
       const fileExt = file.name.split('.').pop();
       const filePath = `${boardId}/${colId}/${rowId}/${Date.now()}.${fileExt}`;
       
+      console.log('Uploading file:', filePath);
+      
       const { error: uploadError } = await supabase.storage
         .from('board-files')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('board-files')
@@ -298,82 +315,88 @@ export default function BoardViewPage() {
             </div>
             
             {/* Existing columns */}
-            {board.columns.map((column) => {
-              const type = getColumnType(column.id);
-              const TypeIcon = columnTypeConfig[type]?.icon || Type;
-              const isEditing = editingColumnId === column.id;
-              
-              return (
-                <div 
-                  key={column.id}
-                  className="w-48 shrink-0 border-r border-border"
-                >
-                  <div className="flex items-center justify-between px-3 py-2 group">
-                    {isEditing ? (
-                      <div className="flex items-center gap-1 flex-1">
-                        <Input
-                          value={editingColumnName}
-                          onChange={(e) => setEditingColumnName(e.target.value)}
-                          className="h-6 text-sm px-1"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') saveColumnName(column.id);
-                            if (e.key === 'Escape') cancelEditingColumn();
-                          }}
-                        />
-                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => saveColumnName(column.id)}>
-                          <Check className="h-3 w-3 text-success" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={cancelEditingColumn}>
-                          <X className="h-3 w-3 text-destructive" />
+            {board.columns && board.columns.length > 0 ? (
+              board.columns.map((column) => {
+                const type = getColumnType(column.id);
+                const TypeIcon = columnTypeConfig[type]?.icon || Type;
+                const isEditing = editingColumnId === column.id;
+                
+                return (
+                  <div 
+                    key={column.id}
+                    className="w-48 shrink-0 border-r border-border"
+                  >
+                    <div className="flex items-center justify-between px-3 py-2 group">
+                      {isEditing ? (
+                        <div className="flex items-center gap-1 flex-1">
+                          <Input
+                            value={editingColumnName}
+                            onChange={(e) => setEditingColumnName(e.target.value)}
+                            className="h-6 text-sm px-1"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveColumnName(column.id);
+                              if (e.key === 'Escape') cancelEditingColumn();
+                            }}
+                          />
+                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => saveColumnName(column.id)}>
+                            <Check className="h-3 w-3 text-success" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={cancelEditingColumn}>
+                            <X className="h-3 w-3 text-destructive" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span 
+                          className="font-medium text-sm truncate cursor-pointer hover:text-primary"
+                          onClick={() => startEditingColumn(column.id, column.title || column.name || 'Untitled')}
+                          title="Click to edit"
+                        >
+                          {column.title || column.name || 'Untitled'}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-60 hover:opacity-100">
+                              <TypeIcon className="h-3.5 w-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {availableColumnTypes.map(({ value: typeKey, label }) => {
+                              const config = columnTypeConfig[typeKey as ExtendedColumnType];
+                              if (!config) return null;
+                              return (
+                                <DropdownMenuItem 
+                                  key={typeKey}
+                                  onClick={() => handleColumnTypeChange(column.id, typeKey as ExtendedColumnType)}
+                                  className={cn(type === typeKey && "bg-accent")}
+                                >
+                                  <config.icon className="h-4 w-4 mr-2" />
+                                  {label}
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-60 hover:opacity-100"
+                          onClick={() => deleteColumn(board.id, column.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
                         </Button>
                       </div>
-                    ) : (
-                      <span 
-                        className="font-medium text-sm truncate cursor-pointer hover:text-primary"
-                        onClick={() => startEditingColumn(column.id, column.name)}
-                        title="Click to edit"
-                      >
-                        {column.name}
-                      </span>
-                    )}
-                    <div className="flex items-center gap-1">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-60 hover:opacity-100">
-                            <TypeIcon className="h-3.5 w-3.5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {availableColumnTypes.map(({ value: typeKey, label }) => {
-                            const config = columnTypeConfig[typeKey as ExtendedColumnType];
-                            if (!config) return null;
-                            return (
-                              <DropdownMenuItem 
-                                key={typeKey}
-                                onClick={() => handleColumnTypeChange(column.id, typeKey as ExtendedColumnType)}
-                                className={cn(type === typeKey && "bg-accent")}
-                              >
-                                <config.icon className="h-4 w-4 mr-2" />
-                                {label}
-                              </DropdownMenuItem>
-                            );
-                          })}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 opacity-0 group-hover:opacity-60 hover:opacity-100"
-                        onClick={() => deleteColumn(board.id, column.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                      </Button>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="w-48 shrink-0 px-3 py-2 text-muted-foreground text-sm">
+                No columns yet. Add one →
+              </div>
+            )}
 
             {/* Add Column */}
             <div className="w-48 shrink-0 px-2 py-2">
@@ -410,7 +433,7 @@ export default function BoardViewPage() {
               </div>
               
               {/* Cells */}
-              {board.columns.map((column) => (
+              {board.columns && board.columns.map((column) => (
                 <div 
                   key={column.id}
                   className="w-48 shrink-0 border-r border-border"

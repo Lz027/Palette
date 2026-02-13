@@ -12,7 +12,6 @@ import {
   Plus,
   PanelLeft,
   PanelRight,
-  X,
   Lightbulb,
   Zap,
   Target,
@@ -23,6 +22,7 @@ import {
 import { NavLink } from '@/components/NavLink';
 import paletteLogo from '@/assets/palette-logo.jpeg';
 import shosekiLogo from '@/assets/shoseki-logo.png';
+import kofiLogo from '@/assets/ko-fi-logotype-27349_64.png';
 import { useBoards } from '@/contexts/BoardContext';
 import { useFocus } from '@/contexts/FocusContext';
 import { Button } from '@/components/ui/button';
@@ -200,31 +200,43 @@ export function MobileSidebar() {
               ))}
             </div>
           </div>
-
-          {/* Ko-fi space (expanded only) */}
-          <div className={cn(
-            "overflow-hidden transition-all duration-300 mt-4",
-            isExpanded ? "h-16 opacity-100" : "h-0 opacity-0"
-          )}>
-            <div className="h-12 mx-2 rounded-lg border-2 border-dashed border-muted" />
-          </div>
         </div>
 
-        {/* Bottom Section */}
+        {/* Bottom Section - Ko-fi first, then Shoseki, then Profile/Settings */}
         <div className="border-t border-border py-2 px-2 space-y-1">
-          {/* Shoseki */}
+          
+          {/* Ko-fi - Support my work */}
+          <a
+            href="https://ko-fi.com/ahmedbaghni"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              "flex items-center gap-3 rounded-lg bg-[#FF5E5B]/10 hover:bg-[#FF5E5B]/20 transition-all",
+              isExpanded ? "px-3 py-2" : "justify-center py-2"
+            )}
+          >
+            <img src={kofiLogo} alt="Ko-fi" className={cn("object-contain", isExpanded ? "w-6 h-6" : "w-5 h-5")} />
+            <span className={cn(
+              "text-sm font-medium whitespace-nowrap transition-all duration-300",
+              isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0 overflow-hidden"
+            )}>
+              Support my work
+            </span>
+          </a>
+
+          {/* Shoseki - ALWAYS black background for both themes */}
           <a
             href="https://shoseki.vercel.app"
             target="_blank"
             rel="noopener noreferrer"
             className={cn(
-              "flex items-center gap-3 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:opacity-80 transition-all",
+              "flex items-center gap-3 rounded-lg bg-black hover:bg-gray-900 transition-all",
               isExpanded ? "px-3 py-2" : "justify-center py-2"
             )}
           >
-            <img src={shosekiLogo} alt="Shoseki" className={cn("object-contain rounded", isExpanded ? "w-6 h-6" : "w-5 h-5")} />
+            <img src={shosekiLogo} alt="Shoseki" className={cn("object-contain rounded bg-white/10", isExpanded ? "w-6 h-6" : "w-5 h-5")} />
             <span className={cn(
-              "text-sm font-semibold whitespace-nowrap transition-all duration-300",
+              "text-sm font-semibold text-white whitespace-nowrap transition-all duration-300",
               isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0 overflow-hidden"
             )}>
               Shoseki

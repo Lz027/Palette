@@ -16,6 +16,7 @@ import {
 import { NavLink } from '@/components/NavLink';
 import paletteLogo from '@/assets/palette-logo.jpeg';
 import shosekiLogo from '@/assets/shoseki-logo.png';
+import kofiLogo from '@/assets/ko-fi-logotype-27349_64.png'; // Add this logo file
 import { useBoards } from '@/contexts/BoardContext';
 import { useFocus } from '@/contexts/FocusContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -57,7 +58,6 @@ export function AppSidebar() {
   const favoriteBoards = boards.filter(b => b.isFavorite).slice(0, 5);
   const recentBoards = boards.slice(-5).reverse();
 
-  // Get the create action based on focus mode
   const getCreateAction = () => {
     switch (focusMode) {
       case 'tech':
@@ -120,7 +120,7 @@ export function AppSidebar() {
     <Sidebar 
       className={cn(
         "border-r border-sidebar-border bg-sidebar transition-all duration-300 relative",
-        open ? "w-56" : "w-14"
+        open ? "w-60" : "w-16"
       )}
       collapsible="icon"
     >
@@ -130,7 +130,7 @@ export function AppSidebar() {
         size="icon"
         onClick={() => setOpen(!open)}
         className={cn(
-          "absolute -right-3 top-4 z-50 h-6 w-6 rounded-full border border-border bg-background shadow-sm",
+          "absolute -right-3 top-6 z-50 h-6 w-6 rounded-full border border-border bg-background shadow-sm",
           "hover:bg-muted transition-colors"
         )}
       >
@@ -148,14 +148,14 @@ export function AppSidebar() {
             alt="Palette" 
             className={cn(
               "rounded-lg object-cover transition-all",
-              !open ? "w-8 h-8" : "w-10 h-10"
+              !open ? "w-10 h-10" : "w-12 h-12"
             )}
           />
         </Link>
       </SidebarHeader>
 
       <SidebarContent className={cn("px-2", !open && "px-1")}>
-        <ScrollArea className="h-[calc(100vh-220px)]">
+        <ScrollArea className="h-[calc(100vh-280px)]">
           {/* Main Navigation */}
           <SidebarGroup>
             <SidebarGroupContent>
@@ -171,7 +171,7 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          {/* Create Action - Focus Aware */}
+          {/* Create Action */}
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -276,8 +276,50 @@ export function AppSidebar() {
         </ScrollArea>
       </SidebarContent>
 
-      {/* Shoseki AI Directory */}
-      <div className={cn("px-2 mb-2", !open && "px-1")}>
+      {/* External Links Section - Ko-fi first, then Shoseki */}
+      <div className={cn("px-2 mb-2 space-y-2", !open && "px-1 space-y-1")}>
+        
+        {/* Ko-fi - Support Me */}
+        {!open ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href="https://ko-fi.com/YOUR_KOFI_LINK"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center p-2.5 rounded-lg bg-[#FF5E5B]/10 hover:bg-[#FF5E5B]/20 transition-colors"
+              >
+                <img 
+                  src={kofiLogo} 
+                  alt="Ko-fi" 
+                  className="w-6 h-6 object-contain"
+                />
+              </a>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={10}>
+              Support my work
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <a
+            href="https://ko-fi.com/YOUR_KOFI_LINK"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-3 py-3 rounded-lg bg-[#FF5E5B]/10 hover:bg-[#FF5E5B]/20 transition-all"
+          >
+            <img 
+              src={kofiLogo} 
+              alt="Ko-fi" 
+              className="w-8 h-8 object-contain shrink-0"
+            />
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-medium truncate">Support me</span>
+              <span className="text-xs text-muted-foreground truncate">Buy me a coffee</span>
+            </div>
+          </a>
+        )}
+
+        {/* Shoseki - Black background, AI Directory tagline */}
         {!open ? (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -285,7 +327,7 @@ export function AppSidebar() {
                 href="https://shoseki.vercel.app"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center p-2.5 rounded-lg bg-foreground/5 hover:bg-foreground/10 transition-colors"
+                className="flex items-center justify-center p-2.5 rounded-lg bg-black hover:bg-black/80 transition-colors"
               >
                 <img 
                   src={shosekiLogo} 
@@ -303,16 +345,16 @@ export function AppSidebar() {
             href="https://shoseki.vercel.app"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-3 py-3 rounded-lg bg-foreground/5 hover:bg-foreground/10 transition-all"
+            className="flex items-center gap-3 px-3 py-3 rounded-lg bg-black hover:bg-black/80 transition-all"
           >
             <img 
               src={shosekiLogo} 
               alt="Shoseki" 
-              className="w-6 h-6 object-contain"
+              className="w-6 h-6 object-contain shrink-0"
             />
-            <div className="flex flex-col">
-              <span className="text-sm font-medium">Shoseki</span>
-              <span className="text-xs text-muted-foreground">AI Directory</span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-medium text-white truncate">Shoseki</span>
+              <span className="text-xs text-gray-400 truncate">AI Directory</span>
             </div>
           </a>
         )}

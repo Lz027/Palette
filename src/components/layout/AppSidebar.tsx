@@ -16,7 +16,7 @@ import {
 import { NavLink } from '@/components/NavLink';
 import paletteLogo from '@/assets/palette-logo.jpeg';
 import shosekiLogo from '@/assets/shoseki-logo.png';
-import kofiLogo from '@/assets/ko-fi-logotype-27349_64.png';
+import kofiLogo from '@/assets/Ko-fi-logo.png';
 import { useBoards } from '@/contexts/BoardContext';
 import { useFocus } from '@/contexts/FocusContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -120,12 +120,11 @@ export function AppSidebar() {
     <Sidebar 
       className={cn(
         "border-r border-sidebar-border bg-sidebar transition-all duration-300 relative",
-        // WIDER: 64px closed / 256px open (was 56px/224px)
         open ? "w-64" : "w-16"
       )}
       collapsible="icon"
     >
-      {/* Toggle button - cleaner positioning in header area */}
+      {/* Toggle button */}
       <Button
         variant="ghost"
         size="icon"
@@ -414,4 +413,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-// test to deploy

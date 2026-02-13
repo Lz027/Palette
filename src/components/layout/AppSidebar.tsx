@@ -16,7 +16,7 @@ import {
 import { NavLink } from '@/components/NavLink';
 import paletteLogo from '@/assets/palette-logo.jpeg';
 import shosekiLogo from '@/assets/shoseki-logo.png';
-import kofiLogo from '@/assets/Ko-fi-logo.png'; 
+import kofiLogo from '@/assets/ko-fi-logotype-27349_64.png';
 import { useBoards } from '@/contexts/BoardContext';
 import { useFocus } from '@/contexts/FocusContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -120,11 +120,12 @@ export function AppSidebar() {
     <Sidebar 
       className={cn(
         "border-r border-sidebar-border bg-sidebar transition-all duration-300 relative",
-        open ? "w-60" : "w-16"
+        // WIDER: 64px closed / 256px open (was 56px/224px)
+        open ? "w-64" : "w-16"
       )}
       collapsible="icon"
     >
-      {/* Toggle button */}
+      {/* Toggle button - cleaner positioning in header area */}
       <Button
         variant="ghost"
         size="icon"
@@ -279,21 +280,17 @@ export function AppSidebar() {
       {/* External Links Section - Ko-fi first, then Shoseki */}
       <div className={cn("px-2 mb-2 space-y-2", !open && "px-1 space-y-1")}>
         
-        {/* Ko-fi - Support Me */}
+        {/* Ko-fi - Support my work */}
         {!open ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <a
-                href="https://ko-fi.com/YOUR_KOFI_LINK"
+                href="https://ko-fi.com/ahmedbaghni"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center p-2.5 rounded-lg bg-[#FF5E5B]/10 hover:bg-[#FF5E5B]/20 transition-colors"
               >
-                <img 
-                  src={kofiLogo} 
-                  alt="Ko-fi" 
-                  className="w-6 h-6 object-contain"
-                />
+                <img src={kofiLogo} alt="Ko-fi" className="w-6 h-6 object-contain" />
               </a>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={10}>
@@ -302,24 +299,20 @@ export function AppSidebar() {
           </Tooltip>
         ) : (
           <a
-            href="https://ko-fi.com/YOUR_KOFI_LINK"
+            href="https://ko-fi.com/ahmedbaghni"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 px-3 py-3 rounded-lg bg-[#FF5E5B]/10 hover:bg-[#FF5E5B]/20 transition-all"
           >
-            <img 
-              src={kofiLogo} 
-              alt="Ko-fi" 
-              className="w-8 h-8 object-contain shrink-0"
-            />
+            <img src={kofiLogo} alt="Ko-fi" className="w-8 h-8 object-contain shrink-0" />
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-medium truncate">Support me</span>
+              <span className="text-sm font-medium truncate">Support my work</span>
               <span className="text-xs text-muted-foreground truncate">Buy me a coffee</span>
             </div>
           </a>
         )}
 
-        {/* Shoseki - Black background, AI Directory tagline */}
+        {/* Shoseki - ALWAYS black background, both themes */}
         {!open ? (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -327,12 +320,12 @@ export function AppSidebar() {
                 href="https://shoseki.vercel.app"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center p-2.5 rounded-lg bg-black hover:bg-black/80 transition-colors"
+                className="flex items-center justify-center p-2.5 rounded-lg bg-black hover:bg-gray-900 transition-colors"
               >
                 <img 
                   src={shosekiLogo} 
                   alt="Shoseki" 
-                  className="w-5 h-5 object-contain"
+                  className="w-5 h-5 object-contain bg-white/10 rounded"
                 />
               </a>
             </TooltipTrigger>
@@ -345,12 +338,12 @@ export function AppSidebar() {
             href="https://shoseki.vercel.app"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-3 py-3 rounded-lg bg-black hover:bg-black/80 transition-all"
+            className="flex items-center gap-3 px-3 py-3 rounded-lg bg-black hover:bg-gray-900 transition-all"
           >
             <img 
               src={shosekiLogo} 
               alt="Shoseki" 
-              className="w-6 h-6 object-contain shrink-0"
+              className="w-6 h-6 object-contain shrink-0 bg-white/10 rounded"
             />
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-medium text-white truncate">Shoseki</span>

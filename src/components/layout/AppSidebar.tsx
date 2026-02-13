@@ -16,7 +16,7 @@ import {
 import { NavLink } from '@/components/NavLink';
 import paletteLogo from '@/assets/palette-logo.jpeg';
 import shosekiLogo from '@/assets/shoseki-logo.png';
-import kofiLogo from '@/assets/ko-fi-logotype-27349_64.png'; // Add this logo file
+import kofiLogo from '@/assets/Ko-fi-logo.png'; 
 import { useBoards } from '@/contexts/BoardContext';
 import { useFocus } from '@/contexts/FocusContext';
 import { useIsMobile } from '@/hooks/use-mobile';

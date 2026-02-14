@@ -6,47 +6,11 @@ import { MobileSidebar } from '@/components/layout/MobileSidebar';
 import { MobileTopBar } from '@/components/layout/MobileTopBar';
 import { TopBar } from '@/components/layout/TopBar';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
-
-function MobileLayout() {
-  return (
-    <div className="min-h-screen flex flex-col w-full bg-background">
-      <MobileTopBar />
-      <div className="flex flex-1 w-full overflow-hidden">
-        <MobileSidebar />
-        <main className="flex-1 overflow-auto p-3 pb-20 pl-16">
-          <Outlet />
-        </main>
-      </div>
-    </div>
-  );
-}
-
-function DesktopLayout() {
-  return (
-    <SidebarProvider defaultOpen>
-      <div className="min-h-screen flex w-full bg-background">
-        {/* Sidebar on the left - fixed position */}
-        <AppSidebar />
-        
-        {/* Main content area */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <TopBar />
-          <main className="flex-1 overflow-auto p-6">
-            <Outlet />
-          </main>
-        </div>
-      </div>
-    </SidebarProvider>
-  );
-}
 
 export function AppLayout() {
   const { isAuthenticated } = useAuth();
-  const isMobile = useIsMobile();
   const location = useLocation();
-
   const isAuthPage = location.pathname === '/login';
 
   if (!isAuthenticated && !isAuthPage) {
@@ -59,12 +23,29 @@ export function AppLayout() {
 
   return (
     <>
-      <div className={cn("md:hidden", isMobile ? "block" : "hidden")}>
-        <MobileLayout />
+      {/* MOBILE - Only shows below md breakpoint */}
+      <div className="flex md:hidden min-h-screen flex-col w-full bg-background">
+        <MobileTopBar />
+        <div className="flex flex-1 w-full overflow-hidden">
+          <MobileSidebar />
+          <main className="flex-1 overflow-auto p-3 pb-20 pl-14">
+            <Outlet />
+          </main>
+        </div>
       </div>
-      <div className={cn("hidden md:block", !isMobile ? "block" : "hidden")}>
-        <DesktopLayout />
-      </div>
+
+      {/* DESKTOP - Only shows at md and above */}
+      <SidebarProvider defaultOpen>
+        <div className="hidden md:flex min-h-screen w-full bg-background">
+          <AppSidebar />
+          <div className="flex-1 flex flex-col min-w-0">
+            <TopBar />
+            <main className="flex-1 overflow-auto p-6">
+              <Outlet />
+            </main>
+          </div>
+        </div>
+      </SidebarProvider>
     </>
   );
 }

@@ -1,11 +1,10 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   FolderKanban, 
   Star, 
   Settings, 
-  Plus,
   User,
   ChevronLeft,
   ChevronRight,
@@ -19,28 +18,8 @@ import shosekiLogo from '@/assets/shoseki-logo.png';
 import kofiLogo from '@/assets/Ko-fi-logo.png';
 import { useBoards } from '@/contexts/BoardContext';
 import { useFocus } from '@/contexts/FocusContext';
-import { useIsMobile } from '@/hooks/use-mobile';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarFooter,
-  useSidebar,
-} from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 
 const mainNavItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
@@ -49,14 +28,11 @@ const mainNavItems = [
 ];
 
 export function AppSidebar() {
-  const { open, setOpen } = useSidebar();
-  const isMobile = useIsMobile();
-  const location = useLocation();
+  const [isOpen, setIsOpen] = useState(true);
   const { boards } = useBoards();
-  const { colors, focusMode } = useFocus();
+  const { focusMode } = useFocus();
 
   const favoriteBoards = boards.filter(b => b.isFavorite).slice(0, 5);
-  const recentBoards = boards.slice(-5).reverse();
 
   const getCreateAction = () => {
     switch (focusMode) {
@@ -83,333 +59,151 @@ export function AppSidebar() {
     return colors[color] || 'bg-primary';
   };
 
-  const NavItem = ({ item }: { item: typeof mainNavItems[0] }) => {
-    const content = (
-      <NavLink 
-        to={item.url} 
-        className={cn(
-          "flex items-center gap-3 rounded-lg transition-colors touch-manipulation",
-          !open ? "justify-center p-2.5" : "px-3 py-2.5",
-          "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-          "active:scale-95"
-        )}
-        activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-      >
-        <item.icon className="h-5 w-5 shrink-0" />
-        {open && <span className="text-sm">{item.title}</span>}
-      </NavLink>
-    );
-
-    if (!open) {
-      return (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            {content}
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={10}>
-            {item.title}
-          </TooltipContent>
-        </Tooltip>
-      );
-    }
-
-    return content;
-  };
-
   return (
-    <Sidebar 
+    <aside 
       className={cn(
-        "border-r border-sidebar-border bg-sidebar transition-all duration-300 relative",
-        open ? "w-64" : "w-20"
+        "h-screen bg-sidebar border-r border-sidebar-border flex flex-col relative transition-all duration-300",
+        isOpen ? "w-64" : "w-20"
       )}
-      collapsible="icon"
     >
-      {/* Toggle button - positioned at sidebar edge */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setOpen(!open)}
-        className={cn(
-          "absolute top-4 z-50 h-6 w-6 rounded-full border border-border bg-background shadow-sm",
-          "hover:bg-muted transition-colors",
-          open ? "right-0 translate-x-1/2" : "right-0 translate-x-1/2"
-        )}
+      {/* Toggle Button - Attached to sidebar edge */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="absolute -right-3 top-6 w-6 h-6 rounded-full border border-border bg-background shadow-md flex items-center justify-center hover:bg-muted transition-colors z-50"
       >
-        {open ? (
-          <ChevronLeft className="h-3 w-3" />
-        ) : (
-          <ChevronRight className="h-3 w-3" />
-        )}
-      </Button>
+        {isOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+      </button>
 
-      <SidebarHeader className={cn("p-4", !open && "p-3")}>
+      {/* Header */}
+      <div className={cn("p-4 border-b border-sidebar-border", !isOpen && "p-3")}>
         <Link to="/dashboard" className="flex items-center justify-center">
           <img 
             src={paletteLogo} 
             alt="Palette" 
-            className={cn(
-              "rounded-lg object-cover transition-all",
-              !open ? "w-10 h-10" : "w-12 h-12"
-            )}
+            className={cn("rounded-lg object-cover", isOpen ? "w-12 h-12" : "w-10 h-10")}
           />
+          {isOpen && <span className="ml-3 font-bold text-xl">PALETTE</span>}
         </Link>
-      </SidebarHeader>
-
-      <SidebarContent className={cn("px-3", !open && "px-2")}>
-        <ScrollArea className="h-[calc(100vh-300px)]">
-          {/* Main Navigation */}
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {mainNavItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavItem item={item} />
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          {/* Create Action */}
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    {!open ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <NavLink 
-                            to={createAction.url}
-                            className={cn(
-                              "flex items-center justify-center p-2.5 rounded-lg transition-colors touch-manipulation",
-                              "bg-primary/10 hover:bg-primary/20 text-primary",
-                              "active:scale-95"
-                            )}
-                          >
-                            <createAction.icon className="h-5 w-5 shrink-0" />
-                          </NavLink>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" sideOffset={10}>
-                          {createAction.label}
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <NavLink 
-                        to={createAction.url}
-                        className={cn(
-                          "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors touch-manipulation",
-                          "bg-primary/10 hover:bg-primary/20 text-primary font-medium",
-                          "active:scale-95"
-                        )}
-                      >
-                        <createAction.icon className="h-5 w-5 shrink-0" />
-                        <span className="text-sm">{createAction.label}</span>
-                      </NavLink>
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          {/* Favorite Boards */}
-          {open && favoriteBoards.length > 0 && (
-            <SidebarGroup>
-              <SidebarGroupLabel className="px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Favorites
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {favoriteBoards.map((board) => (
-                    <SidebarMenuItem key={board.id}>
-                      <SidebarMenuButton asChild>
-                        <NavLink 
-                          to={`/boards/${board.id}`}
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent"
-                          activeClassName="bg-sidebar-accent"
-                        >
-                          <div className={cn(
-                            "w-3 h-3 rounded-sm shrink-0",
-                            getBoardColorClass(board.color)
-                          )} />
-                          <span className="truncate text-sm">{board.name}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          )}
-
-          {/* Recent Boards */}
-          {open && recentBoards.length > 0 && (
-            <SidebarGroup>
-              <SidebarGroupLabel className="px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Recent
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {recentBoards.map((board) => (
-                    <SidebarMenuItem key={board.id}>
-                      <SidebarMenuButton asChild>
-                        <NavLink 
-                          to={`/boards/${board.id}`}
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent"
-                          activeClassName="bg-sidebar-accent"
-                        >
-                          <div className={cn(
-                            "w-3 h-3 rounded-sm shrink-0",
-                            getBoardColorClass(board.color)
-                          )} />
-                          <span className="truncate text-sm">{board.name}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          )}
-        </ScrollArea>
-      </SidebarContent>
-
-      {/* External Links Section - Ko-fi first, then Shoseki */}
-      <div className={cn("px-3 mb-3 space-y-3", !open && "px-2 space-y-2")}>
-        
-        {/* Ko-fi - Support my work - Better styling */}
-        {!open ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <a
-                href="https://ko-fi.com/ahmedbaghni"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center p-3 rounded-xl bg-[#FF5E5B]/10 hover:bg-[#FF5E5B]/20 transition-all"
-              >
-                <img src={kofiLogo} alt="Ko-fi" className="w-6 h-6 object-contain" />
-              </a>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={10}>
-              Support my work
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <a
-            href="https://ko-fi.com/ahmedbaghni"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#FF5E5B]/10 hover:bg-[#FF5E5B]/20 transition-all"
-          >
-            <img src={kofiLogo} alt="Ko-fi" className="w-8 h-8 object-contain shrink-0" />
-            <span className="text-sm font-semibold tracking-tight text-[#FF5E5B]">Support my work</span>
-          </a>
-        )}
-
-        {/* Shoseki - Black bg, transparent logo, better fonts */}
-        {!open ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <a
-                href="https://shoseki.vercel.app"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center p-3 rounded-xl bg-black hover:bg-gray-900 transition-all"
-              >
-                <img 
-                  src={shosekiLogo} 
-                  alt="Shoseki" 
-                  className="w-6 h-6 object-contain"
-                  style={{ backgroundColor: 'transparent' }}
-                />
-              </a>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={10}>
-              Shoseki AI Directory
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <a
-            href="https://shoseki.vercel.app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-black hover:bg-gray-900 transition-all"
-          >
-            <img 
-              src={shosekiLogo} 
-              alt="Shoseki" 
-              className="w-8 h-8 object-contain shrink-0"
-              style={{ backgroundColor: 'transparent' }}
-            />
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-bold text-white tracking-tight">Shoseki</span>
-              <span className="text-xs text-gray-400 font-medium tracking-wide uppercase">AI Directory</span>
-            </div>
-          </a>
-        )}
       </div>
 
-      <SidebarFooter className={cn("p-3 border-t border-sidebar-border", !open && "p-2")}>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              {!open ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <NavLink 
-                      to="/profile"
-                      className="flex items-center justify-center p-2.5 rounded-lg hover:bg-sidebar-accent touch-manipulation active:scale-95"
-                      activeClassName="bg-sidebar-accent"
-                    >
-                      <User className="h-5 w-5 shrink-0" />
-                    </NavLink>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={10}>Profile</TooltipContent>
-                </Tooltip>
-              ) : (
-                <NavLink 
-                  to="/profile"
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent touch-manipulation active:scale-95"
+      {/* Navigation */}
+      <ScrollArea className="flex-1 py-4">
+        <nav className={cn("space-y-1", isOpen ? "px-3" : "px-2")}>
+          {mainNavItems.map((item) => (
+            <NavLink
+              key={item.title}
+              to={item.url}
+              className={cn(
+                "flex items-center gap-3 rounded-lg transition-colors",
+                isOpen ? "px-3 py-2.5" : "justify-center py-2.5",
+                "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}
+              activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+            >
+              <item.icon className="h-5 w-5 shrink-0" />
+              {isOpen && <span className="text-sm">{item.title}</span>}
+            </NavLink>
+          ))}
+
+          {/* Create */}
+          <NavLink
+            to={createAction.url}
+            className={cn(
+              "flex items-center gap-3 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 mt-2",
+              isOpen ? "px-3 py-2.5" : "justify-center py-2.5"
+            )}
+          >
+            <createAction.icon className="h-5 w-5 shrink-0" />
+            {isOpen && <span className="text-sm">{createAction.label}</span>}
+          </NavLink>
+
+          {/* Favorites */}
+          {isOpen && favoriteBoards.length > 0 && (
+            <div className="mt-4">
+              <p className="px-3 text-xs font-medium text-muted-foreground uppercase mb-2">Favorites</p>
+              {favoriteBoards.map((board) => (
+                <NavLink
+                  key={board.id}
+                  to={`/boards/${board.id}`}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent text-sm"
                   activeClassName="bg-sidebar-accent"
                 >
-                  <User className="h-5 w-5 shrink-0" />
-                  <span className="text-sm">Profile</span>
+                  <div className={cn("w-2 h-2 rounded-full", getBoardColorClass(board.color))} />
+                  <span className="truncate">{board.name}</span>
                 </NavLink>
-              )}
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              {!open ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <NavLink 
-                      to="/settings"
-                      className="flex items-center justify-center p-2.5 rounded-lg hover:bg-sidebar-accent touch-manipulation active:scale-95"
-                      activeClassName="bg-sidebar-accent"
-                    >
-                      <Settings className="h-5 w-5 shrink-0" />
-                    </NavLink>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={10}>Settings</TooltipContent>
-                </Tooltip>
-              ) : (
-                <NavLink 
-                  to="/settings"
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent touch-manipulation active:scale-95"
-                  activeClassName="bg-sidebar-accent"
-                >
-                  <Settings className="h-5 w-5 shrink-0" />
-                  <span className="text-sm">Settings</span>
-                </NavLink>
-              )}
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
+              ))}
+            </div>
+          )}
+        </nav>
+      </ScrollArea>
+
+      {/* External Links - Ko-fi & Shoseki */}
+      <div className={cn("border-t border-sidebar-border py-3 space-y-2", isOpen ? "px-3" : "px-2")}>
+        
+        {/* Ko-fi */}
+        <a
+          href="https://ko-fi.com/ahmedbaghni "
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "flex items-center gap-3 rounded-xl bg-[#FF5E5B]/10 hover:bg-[#FF5E5B]/20 transition-all",
+            isOpen ? "px-4 py-3" : "justify-center py-3"
+          )}
+        >
+          <img src={kofiLogo} alt="Ko-fi" className={cn("object-contain", isOpen ? "w-8 h-8" : "w-6 h-6")} />
+          {isOpen && <span className="text-sm font-semibold text-[#FF5E5B]">Support my work</span>}
+        </a>
+
+        {/* Shoseki - Black bg, transparent logo */}
+        <a
+          href="https://shoseki.vercel.app "
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "flex items-center gap-3 rounded-xl bg-black hover:bg-gray-900 transition-all",
+            isOpen ? "px-4 py-3" : "justify-center py-3"
+          )}
+        >
+          <img 
+            src={shosekiLogo} 
+            alt="Shoseki" 
+            className={cn("object-contain", isOpen ? "w-8 h-8" : "w-6 h-6")}
+            style={{ backgroundColor: 'transparent' }}
+          />
+          {isOpen && (
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-white">Shoseki</span>
+              <span className="text-xs text-gray-400 uppercase tracking-wide">AI Directory</span>
+            </div>
+          )}
+        </a>
+      </div>
+
+      {/* Footer */}
+      <div className={cn("border-t border-sidebar-border py-3", isOpen ? "px-3" : "px-2")}>
+        <NavLink
+          to="/profile"
+          className={cn(
+            "flex items-center gap-3 rounded-lg hover:bg-sidebar-accent",
+            isOpen ? "px-3 py-2" : "justify-center py-2"
+          )}
+          activeClassName="bg-sidebar-accent"
+        >
+          <User className="h-5 w-5 shrink-0" />
+          {isOpen && <span className="text-sm">Profile</span>}
+        </NavLink>
+        <NavLink
+          to="/settings"
+          className={cn(
+            "flex items-center gap-3 rounded-lg hover:bg-sidebar-accent mt-1",
+            isOpen ? "px-3 py-2" : "justify-center py-2"
+          )}
+          activeClassName="bg-sidebar-accent"
+        >
+          <Settings className="h-5 w-5 shrink-0" />
+          {isOpen && <span className="text-sm">Settings</span>}
+        </NavLink>
+      </div>
+    </aside>
   );
 }

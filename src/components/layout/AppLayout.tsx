@@ -15,7 +15,6 @@ function MobileLayout() {
       <MobileTopBar />
       <div className="flex flex-1 w-full overflow-hidden">
         <MobileSidebar />
-        {/* Added pl-14 for sidebar width + proper padding */}
         <main className="flex-1 overflow-auto p-3 pb-20 pl-16">
           <Outlet />
         </main>
@@ -27,11 +26,14 @@ function MobileLayout() {
 function DesktopLayout() {
   return (
     <SidebarProvider defaultOpen>
-      <div className="min-h-screen flex flex-col w-full bg-background">
-        <TopBar />
-        <div className="flex flex-1 w-full overflow-hidden">
-          <AppSidebar />
-          <main className="flex-1 overflow-auto p-3 md:p-6">
+      <div className="min-h-screen flex w-full bg-background">
+        {/* Sidebar on the left - fixed position */}
+        <AppSidebar />
+        
+        {/* Main content area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <TopBar />
+          <main className="flex-1 overflow-auto p-6">
             <Outlet />
           </main>
         </div>

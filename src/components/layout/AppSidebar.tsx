@@ -66,17 +66,18 @@ export function AppSidebar() {
         isOpen ? "w-64" : "w-20"
       )}
     >
-      {/* Toggle Button - Attached to sidebar edge */}
+      {/* Toggle Button - Fixed position with higher z-index */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="absolute -right-3 top-6 w-6 h-6 rounded-full border border-border bg-background shadow-md flex items-center justify-center hover:bg-muted transition-colors z-50"
+        className="absolute -right-3 top-6 z-[100] w-6 h-6 rounded-full border border-border bg-background shadow-md flex items-center justify-center hover:bg-muted transition-all cursor-pointer"
+        type="button"
       >
         {isOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
       </button>
 
       {/* Header */}
-      <div className={cn("p-4 border-b border-sidebar-border", !isOpen && "p-3")}>
-        <Link to="/dashboard" className="flex items-center justify-center">
+      <div className={cn("p-4 border-b border-sidebar-border flex items-center justify-center", !isOpen && "p-3")}>
+        <Link to="/dashboard" className="flex items-center">
           <img 
             src={paletteLogo} 
             alt="Palette" 

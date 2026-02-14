@@ -120,18 +120,19 @@ export function AppSidebar() {
     <Sidebar 
       className={cn(
         "border-r border-sidebar-border bg-sidebar transition-all duration-300 relative",
-        open ? "w-64" : "w-16"
+        open ? "w-64" : "w-20"
       )}
       collapsible="icon"
     >
-      {/* Toggle button */}
+      {/* Toggle button - positioned at sidebar edge */}
       <Button
         variant="ghost"
         size="icon"
         onClick={() => setOpen(!open)}
         className={cn(
-          "absolute -right-3 top-6 z-50 h-6 w-6 rounded-full border border-border bg-background shadow-sm",
-          "hover:bg-muted transition-colors"
+          "absolute top-4 z-50 h-6 w-6 rounded-full border border-border bg-background shadow-sm",
+          "hover:bg-muted transition-colors",
+          open ? "right-0 translate-x-1/2" : "right-0 translate-x-1/2"
         )}
       >
         {open ? (
@@ -141,7 +142,7 @@ export function AppSidebar() {
         )}
       </Button>
 
-      <SidebarHeader className={cn("p-3", !open && "p-2")}>
+      <SidebarHeader className={cn("p-4", !open && "p-3")}>
         <Link to="/dashboard" className="flex items-center justify-center">
           <img 
             src={paletteLogo} 
@@ -154,8 +155,8 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
 
-      <SidebarContent className={cn("px-2", !open && "px-1")}>
-        <ScrollArea className="h-[calc(100vh-280px)]">
+      <SidebarContent className={cn("px-3", !open && "px-2")}>
+        <ScrollArea className="h-[calc(100vh-300px)]">
           {/* Main Navigation */}
           <SidebarGroup>
             <SidebarGroupContent>
@@ -277,9 +278,9 @@ export function AppSidebar() {
       </SidebarContent>
 
       {/* External Links Section - Ko-fi first, then Shoseki */}
-      <div className={cn("px-2 mb-2 space-y-2", !open && "px-1 space-y-1")}>
+      <div className={cn("px-3 mb-3 space-y-3", !open && "px-2 space-y-2")}>
         
-        {/* Ko-fi - Support my work */}
+        {/* Ko-fi - Support my work - Better styling */}
         {!open ? (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -287,7 +288,7 @@ export function AppSidebar() {
                 href="https://ko-fi.com/ahmedbaghni"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center p-2.5 rounded-lg bg-[#FF5E5B]/10 hover:bg-[#FF5E5B]/20 transition-colors"
+                className="flex items-center justify-center p-3 rounded-xl bg-[#FF5E5B]/10 hover:bg-[#FF5E5B]/20 transition-all"
               >
                 <img src={kofiLogo} alt="Ko-fi" className="w-6 h-6 object-contain" />
               </a>
@@ -301,17 +302,14 @@ export function AppSidebar() {
             href="https://ko-fi.com/ahmedbaghni"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-3 py-3 rounded-lg bg-[#FF5E5B]/10 hover:bg-[#FF5E5B]/20 transition-all"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#FF5E5B]/10 hover:bg-[#FF5E5B]/20 transition-all"
           >
             <img src={kofiLogo} alt="Ko-fi" className="w-8 h-8 object-contain shrink-0" />
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-medium truncate">Support my work</span>
-              <span className="text-xs text-muted-foreground truncate">Buy me a coffee</span>
-            </div>
+            <span className="text-sm font-semibold tracking-tight text-[#FF5E5B]">Support my work</span>
           </a>
         )}
 
-        {/* Shoseki - ALWAYS black background, both themes */}
+        {/* Shoseki - Black bg, transparent logo, better fonts */}
         {!open ? (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -319,12 +317,13 @@ export function AppSidebar() {
                 href="https://shoseki.vercel.app"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center p-2.5 rounded-lg bg-black hover:bg-gray-900 transition-colors"
+                className="flex items-center justify-center p-3 rounded-xl bg-black hover:bg-gray-900 transition-all"
               >
                 <img 
                   src={shosekiLogo} 
                   alt="Shoseki" 
-                  className="w-5 h-5 object-contain bg-white/10 rounded"
+                  className="w-6 h-6 object-contain"
+                  style={{ backgroundColor: 'transparent' }}
                 />
               </a>
             </TooltipTrigger>
@@ -337,22 +336,23 @@ export function AppSidebar() {
             href="https://shoseki.vercel.app"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-3 py-3 rounded-lg bg-black hover:bg-gray-900 transition-all"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-black hover:bg-gray-900 transition-all"
           >
             <img 
               src={shosekiLogo} 
               alt="Shoseki" 
-              className="w-6 h-6 object-contain shrink-0 bg-white/10 rounded"
+              className="w-8 h-8 object-contain shrink-0"
+              style={{ backgroundColor: 'transparent' }}
             />
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-medium text-white truncate">Shoseki</span>
-              <span className="text-xs text-gray-400 truncate">AI Directory</span>
+              <span className="text-sm font-bold text-white tracking-tight">Shoseki</span>
+              <span className="text-xs text-gray-400 font-medium tracking-wide uppercase">AI Directory</span>
             </div>
           </a>
         )}
       </div>
 
-      <SidebarFooter className={cn("p-2 border-t border-sidebar-border", !open && "p-1")}>
+      <SidebarFooter className={cn("p-3 border-t border-sidebar-border", !open && "p-2")}>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -19,6 +19,7 @@ import { useBoards } from '@/contexts/BoardContext';
 import { useFocus } from '@/contexts/FocusContext';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useSidebar } from '@/components/ui/sidebar';
 
 const mainNavItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
@@ -27,7 +28,8 @@ const mainNavItems = [
 ];
 
 export function AppSidebar() {
-  const [isOpen, setIsOpen] = useState(true);
+  const { state, toggleSidebar } = useSidebar();
+  const isOpen = state === 'expanded';
   const { boards } = useBoards();
   const { focusMode } = useFocus();
 
@@ -65,9 +67,9 @@ export function AppSidebar() {
         isOpen ? "w-64" : "w-20"
       )}
     >
-      {/* Toggle Button - Fixed position with higher z-index */}
+      {/* Toggle Button - Now uses proper sidebar context */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleSidebar}
         className="absolute -right-3 top-6 z-[100] w-6 h-6 rounded-full border border-border bg-background shadow-md flex items-center justify-center hover:bg-muted transition-all cursor-pointer"
         type="button"
       >

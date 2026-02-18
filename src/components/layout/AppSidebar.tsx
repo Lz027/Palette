@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import paletteLogo from '@/assets/palette-logo.jpeg';
+import shosekiLogo from '@/assets/shoseki-logo.png';
 import { useBoards } from '@/contexts/BoardContext';
 import { useFocus } from '@/contexts/FocusContext';
 import { cn } from '@/lib/utils';
@@ -135,6 +136,34 @@ export function AppSidebar() {
           )}
         </nav>
       </ScrollArea>
+
+      {/* External Links - Shoseki Only */}
+      <div className={cn("border-t border-sidebar-border py-3 space-y-2", isOpen ? "px-3" : "px-2")}>
+
+        {/* Shoseki - Black bg, transparent logo */}
+        <a
+          href="https://shoseki.vercel.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "flex items-center gap-3 rounded-xl bg-black hover:bg-gray-900 transition-all",
+            isOpen ? "px-4 py-3" : "justify-center py-3"
+          )}
+        >
+          <img 
+            src={shosekiLogo} 
+            alt="Shoseki" 
+            className={cn("object-contain", isOpen ? "w-8 h-8" : "w-6 h-6")}
+            style={{ backgroundColor: 'transparent' }}
+          />
+          {isOpen && (
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-white">Shoseki</span>
+              <span className="text-xs text-gray-400 uppercase tracking-wide">AI Directory</span>
+            </div>
+          )}
+        </a>
+      </div>
 
       {/* Footer */}
       <div className={cn("border-t border-sidebar-border py-3", isOpen ? "px-3" : "px-2")}>

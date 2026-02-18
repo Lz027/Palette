@@ -63,29 +63,32 @@ export function AppSidebar() {
   return (
     <aside 
       className={cn(
-        "h-screen bg-sidebar border-r border-sidebar-border flex flex-col relative transition-all duration-300",
+        "h-screen bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300",
         isOpen ? "w-64" : "w-20"
       )}
     >
-      {/* Toggle Button - Now uses proper sidebar context */}
-      <button
-        onClick={toggleSidebar}
-        className="absolute -right-3 top-6 z-[100] w-6 h-6 rounded-full border border-border bg-background shadow-md flex items-center justify-center hover:bg-muted transition-all cursor-pointer"
-        type="button"
-      >
-        {isOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-      </button>
-
-      {/* Header */}
-      <div className={cn("p-4 border-b border-sidebar-border flex items-center justify-center", !isOpen && "p-3")}>
+      {/* Header - with toggle button INSIDE */}
+      <div className={cn(
+        "border-b border-sidebar-border flex items-center justify-between",
+        isOpen ? "p-4" : "p-3"
+      )}>
         <Link to="/dashboard" className="flex items-center">
           <img 
             src={paletteLogo} 
             alt="Palette" 
-            className={cn("rounded-lg object-cover", isOpen ? "w-12 h-12" : "w-10 h-10")}
+            className={cn("rounded-lg object-cover", isOpen ? "w-10 h-10" : "w-8 h-8")}
           />
-          {isOpen && <span className="ml-3 font-bold text-xl">PALETTE</span>}
+          {isOpen && <span className="ml-3 font-bold text-lg">PALETTE</span>}
         </Link>
+
+        {/* Toggle Button - INSIDE the header, not absolute */}
+        <button
+          onClick={toggleSidebar}
+          className="w-6 h-6 rounded-full border border-border bg-background shadow-sm flex items-center justify-center hover:bg-muted transition-all cursor-pointer shrink-0"
+          type="button"
+        >
+          {isOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        </button>
       </div>
 
       {/* Navigation */}

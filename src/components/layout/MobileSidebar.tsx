@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import paletteLogo from '@/assets/palette-logo.jpeg';
+import shosekiLogo from '@/assets/shoseki-logo.png';
 import { useBoards } from '@/contexts/BoardContext';
 import { useFocus } from '@/contexts/FocusContext';
 import { Button } from '@/components/ui/button';
@@ -200,8 +201,27 @@ export function MobileSidebar() {
           </div>
         </div>
 
-        {/* Bottom Section - Profile and Settings Only */}
+        {/* Bottom Section - Shoseki, Profile and Settings */}
         <div className="border-t border-border py-2 px-2 space-y-1">
+
+          {/* Shoseki - ALWAYS black background for both themes */}
+          <a
+            href="https://shoseki.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              "flex items-center gap-3 rounded-lg bg-black hover:bg-gray-900 transition-all",
+              isExpanded ? "px-3 py-2" : "justify-center py-2"
+            )}
+          >
+            <img src={shosekiLogo} alt="Shoseki" className={cn("object-contain rounded bg-white/10", isExpanded ? "w-6 h-6" : "w-5 h-5")} />
+            <span className={cn(
+              "text-sm font-semibold text-white whitespace-nowrap transition-all duration-300",
+              isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0 overflow-hidden"
+            )}>
+              Shoseki
+            </span>
+          </a>
 
           {/* Profile - FIXED: Added responsive sizing for mobile */}
           <NavLink

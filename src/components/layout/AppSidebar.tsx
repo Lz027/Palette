@@ -20,6 +20,7 @@ import { useFocus } from '@/contexts/FocusContext';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSidebar } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
 
 const mainNavItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
@@ -67,28 +68,33 @@ export function AppSidebar() {
         isOpen ? "w-64" : "w-20"
       )}
     >
-      {/* Header - with toggle button INSIDE */}
+      {/* Header with Toggle Button */}
       <div className={cn(
-        "border-b border-sidebar-border flex items-center justify-between",
-        isOpen ? "p-4" : "p-3"
+        "border-b border-sidebar-border flex items-center gap-3",
+        isOpen ? "p-4" : "p-3 justify-center"
       )}>
-        <Link to="/dashboard" className="flex items-center">
+        <Link to="/dashboard" className="flex items-center shrink-0">
           <img 
             src={paletteLogo} 
             alt="Palette" 
-            className={cn("rounded-lg object-cover", isOpen ? "w-10 h-10" : "w-8 h-8")}
+            className={cn("rounded-lg object-cover", isOpen ? "w-10 h-10" : "w-10 h-10")}
           />
-          {isOpen && <span className="ml-3 font-bold text-lg">PALETTE</span>}
         </Link>
-
-        {/* Toggle Button - INSIDE the header, not absolute */}
-        <button
+        
+        {isOpen && <span className="font-bold text-lg">PALETTE</span>}
+        
+        {/* Toggle Button - Always visible, positioned right when open, centered when closed */}
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={toggleSidebar}
-          className="w-6 h-6 rounded-full border border-border bg-background shadow-sm flex items-center justify-center hover:bg-muted transition-all cursor-pointer shrink-0"
-          type="button"
+          className={cn(
+            "h-8 w-8 rounded-lg border border-sidebar-border hover:bg-sidebar-accent transition-all shrink-0",
+            isOpen ? "ml-auto" : "absolute right-2 top-4"
+          )}
         >
-          {isOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        </button>
+          {isOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        </Button>
       </div>
 
       {/* Navigation */}
@@ -144,7 +150,6 @@ export function AppSidebar() {
 
       {/* External Links - Shoseki Only */}
       <div className={cn("border-t border-sidebar-border py-3 space-y-2", isOpen ? "px-3" : "px-2")}>
-
         {/* Shoseki - Black bg, transparent logo */}
         <a
           href="https://shoseki.vercel.app"

@@ -30,20 +30,11 @@ const columnTypeConfig: Record<ExtendedColumnType, { icon: React.ElementType; la
 
 export default function BoardViewPage() {
   const { boardId } = useParams<{ boardId: string }>();
-  const { boards, toggleFavorite, addColumn, deleteColumn, updateColumn } = useBoards();
+  const { boards, toggleFavorite, addColumn, deleteColumn, updateColumn, updateBoard } = useBoards();
   const { focusMode, getColumnTypes } = useFocus();
   
   const board = boards.find(b => b.id === boardId);
 
-  // DEBUG: Log board data
-  console.log('=== BOARD DEBUG ===');
-  console.log('Board ID:', boardId);
-  console.log('Board found:', !!board);
-  console.log('Board data:', board);
-  console.log('Board columns:', board?.columns);
-  console.log('Columns count:', board?.columns?.length);
-  console.log('First column:', board?.columns?.[0]);
-  
   const [newColumnName, setNewColumnName] = useState('');
   const [rows, setRows] = useState<{ id: string; cells: Record<string, string> }[]>([
     { id: '1', cells: {} },
@@ -56,15 +47,33 @@ export default function BoardViewPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingFileCell, setPendingFileCell] = useState<{ rowId: string; colId: string } | null>(null);
 
+  const [isEditingBoardName, setIsEditingBoardName] = useState(false);
+  const [boardNameEdit, setBoardNameEdit] = useState(board?.name || '');
+
   if (!board) {
-    console.log('Board not found, redirecting...');
     return <Navigate to="/boards" replace />;
   }
+
+  const startEditingBoardName = () => {
+    setIsEditingBoardName(true);
+    setBoardNameEdit(board.name);
+  };
+
+  const saveBoardName = async () => {
+    if (boardNameEdit.trim() && boardNameEdit !== board.name) {
+      await updateBoard(board.id, { name: boardNameEdit.trim() });
+    }
+    setIsEditingBoardName(false);
+  };
+
+  const cancelBoardNameEdit = () => {
+    setBoardNameEdit(board.name);
+    setIsEditingBoardName(false);
+  };
 
   const handleAddColumn = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newColumnName.trim()) return;
-    console.log('Adding column:', newColumnName);
     addColumn(board.id, newColumnName.trim());
     setNewColumnName('');
   };
@@ -118,16 +127,11 @@ export default function BoardViewPage() {
       const fileExt = file.name.split('.').pop();
       const filePath = `${boardId}/${colId}/${rowId}/${Date.now()}.${fileExt}`;
       
-      console.log('Uploading file:', filePath);
-      
       const { error: uploadError } = await supabase.storage
         .from('board-files')
         .upload(filePath, file);
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
         .from('board-files')
@@ -170,89 +174,6 @@ export default function BoardViewPage() {
       onFocus: () => setEditingCell({ rowId, colId }),
       className: "h-9 border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent",
     };
-    
-  const [isEditingBoardName, setIsEditingBoardName] = useState(false);
-  const [boardNameEdit, setBoardNameEdit] = useState(board.name);
-  const { updateBoard } = useBoards();
-
-  const startEditingBoardName = () => {
-    setIsEditingBoardName(true);
-    setBoardNameEdit(board.name);
-  };
-
-  const saveBoardName = async () => {
-    if (boardNameEdit.trim() && boardNameEdit !== board.name) {
-      await updateBoard(board.id, { name: boardNameEdit.trim() });
-    }
-    setIsEditingBoardName(false);
-  };
-
-  const cancelBoardNameEdit = () => {
-    setBoardNameEdit(board.name);
-    setIsEditingBoardName(false);
-  };
-
-  // ... then in the JSX, replace the header div:
-
-  <div className="p-4 md:p-6 border-b border-border bg-card">
-    <div className="flex items-center gap-4">
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        asChild
-      >
-        <Link to="/boards">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-      </Button>
-      
-      <div className="flex-1 min-w-0">
-        {isEditingBoardName ? (
-          <div className="flex items-center gap-2">
-            <Input
-              value={boardNameEdit}
-              onChange={(e) => setBoardNameEdit(e.target.value)}
-              className="font-display text-xl md:text-2xl font-bold h-auto py-1"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') saveBoardName();
-                if (e.key === 'Escape') cancelBoardNameEdit();
-              }}
-            />
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={saveBoardName}>
-              <Check className="h-4 w-4 text-success" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={cancelBoardNameEdit}>
-              <X className="h-4 w-4 text-destructive" />
-            </Button>
-          </div>
-        ) : (
-          <h1 
-            className="font-display text-xl md:text-2xl font-bold text-foreground cursor-pointer hover:text-primary transition-colors"
-            onClick={startEditingBoardName}
-            title="Click to edit board name"
-          >
-            {board.name}
-          </h1>
-        )}
-        
-        {board.description && !isEditingBoardName && (
-          <p className="text-sm text-muted-foreground truncate">{board.description}</p>
-        )}
-      </div>
-
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => toggleFavorite(board.id)}
-        className={cn(
-          board.isFavorite ? "text-warning" : "text-muted-foreground"
-        )}
-      >
-        <Star className={cn("h-5 w-5", board.isFavorite && "fill-current")} />
-      </Button>
-    </div>
-  </div>
 
     switch (type) {
       case 'number':
@@ -345,7 +266,6 @@ export default function BoardViewPage() {
 
   return (
     <div className="h-full flex flex-col -m-3 md:-m-6">
-      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -353,6 +273,7 @@ export default function BoardViewPage() {
         onChange={onFileInputChange}
         accept="*/*"
       />
+      
       <div className="p-4 md:p-6 border-b border-border bg-card">
         <div className="flex items-center gap-4">
           <Button 
@@ -366,10 +287,36 @@ export default function BoardViewPage() {
           </Button>
           
           <div className="flex-1 min-w-0">
-            <h1 className="font-display text-xl md:text-2xl font-bold text-foreground">
-              {board.name}
-            </h1>
-            {board.description && (
+            {isEditingBoardName ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={boardNameEdit}
+                  onChange={(e) => setBoardNameEdit(e.target.value)}
+                  className="font-display text-xl md:text-2xl font-bold h-auto py-1"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') saveBoardName();
+                    if (e.key === 'Escape') cancelBoardNameEdit();
+                  }}
+                />
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={saveBoardName}>
+                  <Check className="h-4 w-4 text-success" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={cancelBoardNameEdit}>
+                  <X className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            ) : (
+              <h1 
+                className="font-display text-xl md:text-2xl font-bold text-foreground cursor-pointer hover:text-primary transition-colors"
+                onClick={startEditingBoardName}
+                title="Click to edit board name"
+              >
+                {board.name}
+              </h1>
+            )}
+            
+            {board.description && !isEditingBoardName && (
               <p className="text-sm text-muted-foreground truncate">{board.description}</p>
             )}
           </div>
@@ -387,17 +334,13 @@ export default function BoardViewPage() {
         </div>
       </div>
 
-      {/* Spreadsheet View */}
       <ScrollArea className="flex-1">
         <div className="min-w-max">
-          {/* Header Row */}
           <div className="flex border-b border-border bg-muted/30 sticky top-0 z-10">
-            {/* Row number column */}
             <div className="w-12 shrink-0 px-2 py-2 border-r border-border flex items-center justify-center">
               <span className="text-xs text-muted-foreground">#</span>
             </div>
             
-            {/* Existing columns */}
             {board.columns && board.columns.length > 0 ? (
               board.columns.map((column) => {
                 const type = getColumnType(column.id);
@@ -481,7 +424,6 @@ export default function BoardViewPage() {
               </div>
             )}
 
-            {/* Add Column */}
             <div className="w-48 shrink-0 px-2 py-2">
               <form onSubmit={handleAddColumn} className="flex gap-1">
                 <Input
@@ -499,10 +441,8 @@ export default function BoardViewPage() {
             </div>
           </div>
 
-          {/* Data Rows */}
           {rows.map((row, rowIndex) => (
             <div key={row.id} className="flex border-b border-border hover:bg-muted/20 group">
-              {/* Row number */}
               <div className="w-12 shrink-0 px-2 py-1 border-r border-border flex items-center justify-center relative">
                 <span className="text-xs text-muted-foreground group-hover:opacity-0">{rowIndex + 1}</span>
                 <Button
@@ -515,7 +455,6 @@ export default function BoardViewPage() {
                 </Button>
               </div>
               
-              {/* Cells */}
               {board.columns && board.columns.map((column) => (
                 <div 
                   key={column.id}
@@ -525,12 +464,10 @@ export default function BoardViewPage() {
                 </div>
               ))}
 
-              {/* Empty cell for add column space */}
               <div className="w-48 shrink-0" />
             </div>
           ))}
 
-          {/* Add Row Button */}
           <div className="flex border-b border-border">
             <button
               onClick={handleAddRow}

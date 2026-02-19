@@ -7,10 +7,11 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { Sun, Moon, Monitor, Palette, Bell, Zap, Clock, User, Mail, Shield } from 'lucide-react';
+import { Sun, Moon, Monitor, Palette, Bell, Zap, Clock, User, Mail, Shield, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import paletteLogo from '@/assets/palette-logo.jpeg';
 
 interface UserSettings {
   compact_mode: boolean;
@@ -31,6 +32,7 @@ export default function SettingsPage() {
     reminders_enabled: true,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -51,7 +53,13 @@ export default function SettingsPage() {
     }
 
     if (data) {
-      setSettings(data);
+      setSettings({
+        compact_mode: data.compact_mode ?? false,
+        quick_capture: data.quick_capture ?? true,
+        morning_reminder: data.morning_reminder ?? '09:00',
+        evening_reminder: data.evening_reminder ?? '17:00',
+        reminders_enabled: data.reminders_enabled ?? true,
+      });
     }
   };
 
@@ -60,6 +68,7 @@ export default function SettingsPage() {
     
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
+    setHasChanges(true);
     
     setIsLoading(true);
     const { error } = await supabase
@@ -68,6 +77,8 @@ export default function SettingsPage() {
         user_id: user.id,
         ...newSettings,
         updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id'
       });
 
     setIsLoading(false);
@@ -78,7 +89,34 @@ export default function SettingsPage() {
       return;
     }
     
-    toast.success('Settings saved');
+    toast.success(`${key.replace(/_/g, ' ')} updated`);
+    setHasChanges(false);
+  };
+
+  const saveAllSettings = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    const { error } = await supabase
+      .from('user_settings')
+      .upsert({
+        user_id: user.id,
+        ...settings,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id'
+      });
+
+    setIsLoading(false);
+    
+    if (error) {
+      console.error('Error saving settings:', error);
+      toast.error('Failed to save settings');
+      return;
+    }
+    
+    toast.success('All settings saved');
+    setHasChanges(false);
   };
 
   const themeOptions = [
@@ -89,9 +127,17 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-8">
-      <div className="text-center">
-        <h1 className="font-display text-2xl md:text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground mt-1">Customize your Palette experience</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-2xl md:text-3xl font-bold">Settings</h1>
+          <p className="text-muted-foreground mt-1">Customize your Palette experience</p>
+        </div>
+        {hasChanges && (
+          <Button onClick={saveAllSettings} disabled={isLoading} size="sm">
+            <Check className="h-4 w-4 mr-2" />
+            Save All
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -158,6 +204,7 @@ export default function SettingsPage() {
               id="reminders_enabled" 
               checked={settings.reminders_enabled}
               onCheckedChange={(checked) => updateSetting('reminders_enabled', checked)}
+              disabled={isLoading}
             />
           </div>
 
@@ -179,7 +226,7 @@ export default function SettingsPage() {
                 value={settings.morning_reminder}
                 onChange={(e) => updateSetting('morning_reminder', e.target.value)}
                 className="w-24"
-                disabled={!settings.reminders_enabled}
+                disabled={!settings.reminders_enabled || isLoading}
               />
             </div>
 
@@ -198,7 +245,7 @@ export default function SettingsPage() {
                 value={settings.evening_reminder}
                 onChange={(e) => updateSetting('evening_reminder', e.target.value)}
                 className="w-24"
-                disabled={!settings.reminders_enabled}
+                disabled={!settings.reminders_enabled || isLoading}
               />
             </div>
           </div>
@@ -225,6 +272,7 @@ export default function SettingsPage() {
               id="compact" 
               checked={settings.compact_mode}
               onCheckedChange={(checked) => updateSetting('compact_mode', checked)}
+              disabled={isLoading}
             />
           </div>
 
@@ -244,6 +292,7 @@ export default function SettingsPage() {
               id="quickcapture" 
               checked={settings.quick_capture}
               onCheckedChange={(checked) => updateSetting('quick_capture', checked)}
+              disabled={isLoading}
             />
           </div>
         </CardContent>
@@ -276,25 +325,26 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-display text-lg">About Palette</CardTitle>
+          <CardTitle className="font-display text-lg">About</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">P</span>
-            </div>
+            <img 
+              src={paletteLogo} 
+              alt="Palette" 
+              className="w-12 h-12 rounded-xl object-cover"
+            />
             <div>
-              <p className="font-display font-semibold text-gradient">Palette v1.0</p>
+              <p className="font-display font-semibold">Palette</p>
               <p className="text-sm text-muted-foreground">
-                Paint your productivity canvas
+                Version 1.0 · Built with care
               </p>
             </div>
           </div>
-          <div className="mt-4 p-4 rounded-lg bg-muted/50">
-            <p className="text-sm text-muted-foreground">
-              Palette is a beautiful, colorful project management app that gives you the freedom to create your perfect workspace. Choose from unique templates, customize with vibrant colors, and stay productive in style.
-            </p>
-          </div>
+          <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+            A personal workspace for your ideas, tasks, and projects. 
+            Designed for focus, built for flow.
+          </p>
         </CardContent>
       </Card>
     </div>

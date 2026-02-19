@@ -1,13 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, Moon, Sun, Monitor } from 'lucide-react';
+import { Moon, Sun, Monitor } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFocus } from '@/contexts/FocusContext';
 import { FocusChangeOverlay } from '@/components/features/FocusChangeOverlay';
 import { useFocusSound } from '@/hooks/useFocusSound';
 import { Button } from '@/components/ui/button';
-import { SidebarTrigger } from '@/components/ui/sidebar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FocusWheel } from '@/components/features/FocusWheel';
+import { NotificationBell } from '@/components/features/NotificationBell';
 
 interface TopBarProps {
   onMenuClick?: () => void;
@@ -35,7 +35,6 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     confirmModeChange();
   };
 
-  // Play sound when mode change is triggered
   React.useEffect(() => {
     if (pendingModeChange) {
       playFocusSound(pendingModeChange);
@@ -52,23 +51,15 @@ export function TopBar({ onMenuClick }: TopBarProps) {
       <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-lg">
         <div className="flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-2">
-            <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+            {/* SidebarTrigger REMOVED - now only in AppSidebar */}
           </div>
 
-          {/* Spacer */}
           <div className="flex-1" />
 
           <div className="flex items-center gap-2">
-            {/* Focus Wheel */}
             <FocusWheel compact />
+            <NotificationBell />
 
-            {/* Notifications */}
-            <Button variant="ghost" size="icon" className="text-muted-foreground relative h-9 w-9">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
-            </Button>
-
-            {/* Theme Toggle */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9">
@@ -95,7 +86,6 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* User Avatar */}
             {user && (
               <Link to="/profile">
                 <Avatar className="h-8 w-8 border-2 border-primary/20 cursor-pointer hover:border-primary/40 transition-colors">

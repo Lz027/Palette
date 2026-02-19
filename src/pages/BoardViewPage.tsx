@@ -170,6 +170,89 @@ export default function BoardViewPage() {
       onFocus: () => setEditingCell({ rowId, colId }),
       className: "h-9 border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent",
     };
+    
+  const [isEditingBoardName, setIsEditingBoardName] = useState(false);
+  const [boardNameEdit, setBoardNameEdit] = useState(board.name);
+  const { updateBoard } = useBoards();
+
+  const startEditingBoardName = () => {
+    setIsEditingBoardName(true);
+    setBoardNameEdit(board.name);
+  };
+
+  const saveBoardName = async () => {
+    if (boardNameEdit.trim() && boardNameEdit !== board.name) {
+      await updateBoard(board.id, { name: boardNameEdit.trim() });
+    }
+    setIsEditingBoardName(false);
+  };
+
+  const cancelBoardNameEdit = () => {
+    setBoardNameEdit(board.name);
+    setIsEditingBoardName(false);
+  };
+
+  // ... then in the JSX, replace the header div:
+
+  <div className="p-4 md:p-6 border-b border-border bg-card">
+    <div className="flex items-center gap-4">
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        asChild
+      >
+        <Link to="/boards">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+      </Button>
+      
+      <div className="flex-1 min-w-0">
+        {isEditingBoardName ? (
+          <div className="flex items-center gap-2">
+            <Input
+              value={boardNameEdit}
+              onChange={(e) => setBoardNameEdit(e.target.value)}
+              className="font-display text-xl md:text-2xl font-bold h-auto py-1"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveBoardName();
+                if (e.key === 'Escape') cancelBoardNameEdit();
+              }}
+            />
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={saveBoardName}>
+              <Check className="h-4 w-4 text-success" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={cancelBoardNameEdit}>
+              <X className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        ) : (
+          <h1 
+            className="font-display text-xl md:text-2xl font-bold text-foreground cursor-pointer hover:text-primary transition-colors"
+            onClick={startEditingBoardName}
+            title="Click to edit board name"
+          >
+            {board.name}
+          </h1>
+        )}
+        
+        {board.description && !isEditingBoardName && (
+          <p className="text-sm text-muted-foreground truncate">{board.description}</p>
+        )}
+      </div>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => toggleFavorite(board.id)}
+        className={cn(
+          board.isFavorite ? "text-warning" : "text-muted-foreground"
+        )}
+      >
+        <Star className={cn("h-5 w-5", board.isFavorite && "fill-current")} />
+      </Button>
+    </div>
+  </div>
 
     switch (type) {
       case 'number':

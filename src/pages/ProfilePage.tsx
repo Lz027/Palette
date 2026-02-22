@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { LogOut, Camera, FolderKanban, Calendar, Loader2, Save, ImagePlus, Pencil, X } from 'lucide-react';
+import { LogOut, Camera, Pencil, X, Save, Loader2, ImagePlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { displayNameSchema, bioSchema, validateInput, INPUT_LIMITS } from '@/lib/validation';
@@ -25,8 +25,8 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
+  const [avatarKey, setAvatarKey] = useState(0);
 
-  // Load profile data
   const loadProfileData = async () => {
     if (!user) return;
 
@@ -47,7 +47,6 @@ export default function ProfilePage() {
         setBio('');
       }
 
-      // Load banner
       const { data: bannerFiles } = await supabase.storage
         .from('banners')
         .list(user.id, { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
@@ -56,7 +55,7 @@ export default function ProfilePage() {
         const { data: { publicUrl } } = supabase.storage
           .from('banners')
           .getPublicUrl(`${user.id}/${bannerFiles[0].name}`);
-        setBannerUrl(publicUrl);
+        setBannerUrl(`${publicUrl}?t=${Date.now()}`);
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -103,7 +102,18 @@ export default function ProfilePage() {
     try {
       const url = await uploadAvatar(file);
       if (url) {
+        const timestampedUrl = `${url}?t=${Date.now()}`;
+        
+        await supabase.auth.updateUser({
+          data: { avatar_url: timestampedUrl }
+        });
+        
+        setAvatarKey(prev => prev + 1);
         toast.success('Profile picture updated!');
+        
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } else {
         toast.error('Failed to upload image');
       }
@@ -143,7 +153,7 @@ export default function ProfilePage() {
         .from('banners')
         .getPublicUrl(filePath);
 
-      setBannerUrl(publicUrl);
+      setBannerUrl(`${publicUrl}?t=${Date.now()}`);
       toast.success('Banner updated!');
     } catch (error) {
       console.error('Banner upload error:', error);
@@ -189,20 +199,19 @@ export default function ProfilePage() {
   };
 
   const handleCancelEdit = () => {
-    // Reload saved values instead of resetting
     loadProfileData();
     setIsEditing(false);
   };
 
   const handleStartEdit = async () => {
-    // Reload fresh data before editing
     await loadProfileData();
     setIsEditing(true);
   };
 
+  const avatarUrlWithCache = user.avatar ? `${user.avatar}?t=${avatarKey}` : undefined;
+
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-8">
-      {/* Banner & Avatar */}
       <div className="relative">
         <div 
           className={cn(
@@ -227,11 +236,10 @@ export default function ProfilePage() {
           <input ref={bannerInputRef} type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
         </div>
 
-        {/* Avatar */}
         <div className="absolute -bottom-12 left-4 sm:left-6">
           <div className="relative group">
             <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-              <AvatarImage src={user.avatar} />
+              <AvatarImage key={avatarKey} src={avatarUrlWithCache} />
               <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-primary-foreground text-2xl font-bold">
                 {getInitials(user.name)}
               </AvatarFallback>
@@ -248,7 +256,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Profile Info - Name left, Edit button far right */}
       <div className="pt-14 px-1">
         <div className="flex items-center justify-between">
           <div>
@@ -257,7 +264,6 @@ export default function ProfilePage() {
             {bio && !isEditing && <p className="text-sm text-muted-foreground mt-2 max-w-md">{bio}</p>}
           </div>
           
-          {/* Edit Profile button - far right */}
           {!isEditing ? (
             <Button variant="outline" size="sm" onClick={handleStartEdit}>
               <Pencil className="h-4 w-4 mr-2" />
@@ -278,7 +284,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Edit Form - Only visible when editing */}
       {isEditing && (
         <Card className="glass-card">
           <CardContent className="pt-6 space-y-4">
@@ -303,7 +308,6 @@ export default function ProfilePage() {
         </Card>
       )}
 
-      {/* Stats */}
       <Card className="glass-card">
         <CardHeader><CardTitle className="font-display text-lg">Your Activity</CardTitle></CardHeader>
         <CardContent>
@@ -316,7 +320,6 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      {/* Log Out */}
       <Card className="glass-card">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">

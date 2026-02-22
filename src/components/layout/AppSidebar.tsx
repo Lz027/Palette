@@ -6,8 +6,8 @@ import {
   Star, 
   Settings, 
   User,
-  ChevronLeft,
-  ChevronRight,
+  PanelLeft,
+  PanelRight,
   Code,
   Palette,
   Briefcase,
@@ -64,11 +64,21 @@ export function AppSidebar() {
   return (
     <aside 
       className={cn(
-        "h-screen bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300",
+        "h-screen bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300 relative",
         isOpen ? "w-64" : "w-20"
       )}
     >
-      {/* Header with Toggle Button */}
+      {/* Toggle Button - Fixed position like mobile */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleSidebar}
+        className="absolute -right-4 top-4 h-8 w-8 rounded-lg border border-sidebar-border bg-background shadow-sm hover:bg-muted transition-all z-50"
+      >
+        {isOpen ? <PanelLeft className="h-4 w-4" /> : <PanelRight className="h-4 w-4" />}
+      </Button>
+
+      {/* Header */}
       <div className={cn(
         "border-b border-sidebar-border flex items-center gap-3",
         isOpen ? "p-4" : "p-3 justify-center"
@@ -82,19 +92,6 @@ export function AppSidebar() {
         </Link>
         
         {isOpen && <span className="font-bold text-lg">PALETTE</span>}
-        
-        {/* Toggle Button - Always visible, positioned right when open, centered when closed */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleSidebar}
-          className={cn(
-            "h-8 w-8 rounded-lg border border-sidebar-border hover:bg-sidebar-accent transition-all shrink-0",
-            isOpen ? "ml-auto" : "absolute right-2 top-4"
-          )}
-        >
-          {isOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-        </Button>
       </div>
 
       {/* Navigation */}

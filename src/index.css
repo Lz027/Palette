@@ -2,7 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Palette Design System - Colorful but balanced */
+/* Palette Design Sy/* Smooth transitions globally */
+* {
+  @apply transition-colors duration-200;
+}
+
+/* Custom animations */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes wave {
+  0% { transform: translateX(-100%) rotate(12deg); }
+  50% { transform: translateX(0%) rotate(12deg); }
+  100% { transform: translateX(100%) rotate(12deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Card hover effects */
+.card-hover {
+  @apply transition-all duration-300 ease-out hover:shadow-lg hover:-translate-y-1;
+}
+
+/* Button press effect */
+.btn-press {
+  @apply active:scale-95 transition-transform duration-100;
+}
+
+/* Glass morphism enhancement */
+.glass-card {
+  @apply backdrop-blur-xl bg-white/70 dark:bg-black/40 border border-white/20 shadow-xl;
+}
+
+/* Focus ring animation */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 transition-all duration-200;
+}stem - Colorful but balanced */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 

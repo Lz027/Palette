@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
+import { FocusMode } from '@/contexts/FocusContext';
 
 interface Card {
   id: string;
@@ -24,11 +25,13 @@ interface Board {
   columns: Column[];
   createdAt: Date;
   userId: string;
+  focusMode?: FocusMode;
+  template?: string;
 }
 
 interface BoardContextType {
   boards: Board[];
-  createBoard: (name: string, color: string, template?: string) => Promise<Board>;
+  createBoard: (name: string, color: string, template?: string, focusMode?: FocusMode) => Promise<Board>;
   updateBoard: (id: string, updates: Partial<Board>) => Promise<void>;
   deleteBoard: (id: string) => Promise<void>;
   toggleFavorite: (id: string) => Promise<void>;
@@ -38,6 +41,8 @@ interface BoardContextType {
   updateColumn: (boardId: string, columnId: string, title: string) => Promise<void>;
   deleteColumn: (boardId: string, columnId: string) => Promise<void>;
   isLoading: boolean;
+  focusMode: FocusMode;
+  setFocusMode: (mode: FocusMode) => void;
 }
 
 const BoardContext = createContext<BoardContextType | undefined>(undefined);
@@ -47,6 +52,7 @@ const generateId = () => Math.random().toString(36).substring(2) + Date.now().to
 export function BoardProvider({ children }: { children: React.ReactNode }) {
   const [boards, setBoards] = useState<Board[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [focusMode, setFocusMode] = useState<FocusMode>('productive');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -75,7 +81,9 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
           isFavorite: b.is_favorite,
           columns: b.columns || [],
           createdAt: new Date(b.created_at),
-          userId: b.user_id
+          userId: b.user_id,
+          focusMode: b.focus_mode,
+          template: b.template
         })));
       }
       setIsLoading(false);
@@ -84,13 +92,15 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     fetchBoards();
   }, [user]);
 
-  const createBoard = async (name: string, color: string, template?: string): Promise<Board> => {
+  const createBoard = async (name: string, color: string, template?: string, boardFocusMode?: FocusMode): Promise<Board> => {
     if (!user) throw new Error('Not authenticated');
 
     if (boards.length >= 100) {
       toast.error('Board limit reached (100). Delete old boards to create new ones.');
       throw new Error('Board limit reached');
     }
+
+    const currentMode = boardFocusMode || focusMode;
 
     const columns = template === 'kanban' 
       ? [
@@ -108,7 +118,9 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
           color,
           columns,
           user_id: user.id,
-          is_favorite: false
+          is_favorite: false,
+          focus_mode: currentMode,
+          template: template || 'default'
         })
         .select()
         .single();
@@ -138,7 +150,9 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
         isFavorite: data.is_favorite,
         columns: data.columns,
         createdAt: new Date(data.created_at),
-        userId: data.user_id
+        userId: data.user_id,
+        focusMode: data.focus_mode,
+        template: data.template
       };
 
       setBoards(prev => [newBoard, ...prev]);
@@ -158,7 +172,9 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
         name: updates.name,
         color: updates.color,
         is_favorite: updates.isFavorite,
-        columns: updates.columns
+        columns: updates.columns,
+        focus_mode: updates.focusMode,
+        template: updates.template
       })
       .eq('id', id);
 
@@ -278,7 +294,9 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       addColumn,
       updateColumn,
       deleteColumn,
-      isLoading
+      isLoading,
+      focusMode,
+      setFocusMode
     }}>
       {children}
     </BoardContext.Provider>

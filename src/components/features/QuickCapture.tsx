@@ -44,7 +44,7 @@ export function QuickCapture() {
       >
         <Zap className="h-5 w-5" />
         <span className="font-medium">Quick Capture</span>
-        <span className="text-xs opacity-70">— Add an entry instantly</span>
+        <span className="text-xs opacity-70">— Add instantly</span>
       </button>
     );
   }

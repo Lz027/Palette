@@ -108,38 +108,6 @@ export function useFocus() {
   return context;
 }
 
-// Dev tools for tech mode
-export const devTools = [
-  { id: 'github', name: 'GitHub', icon: '🔗' },
-  { id: 'vscode', name: 'VS Code', icon: '💻' },
-  { id: 'docker', name: 'Docker', icon: '🐳' },
-  { id: 'postgres', name: 'PostgreSQL', icon: '🐘' },
-  { id: 'supabase', name: 'Supabase', icon: '⚡' },
-  { id: 'vercel', name: 'Vercel', icon: '▲' },
-  { id: 'cursor', name: 'Cursor AI', icon: '🤖' },
-  { id: 'lovable', name: 'Lovable', icon: '💜' },
-  { id: 'npm', name: 'npm', icon: '📦' },
-  { id: 'git', name: 'Git', icon: '📝' },
-  { id: 'figma', name: 'Figma', icon: '🎨' },
-  { id: 'notion', name: 'Notion', icon: '📓' },
-];
-
-// Design tools for design mode
-export const designTools = [
-  { id: 'figma', name: 'Figma', icon: '🎨' },
-  { id: 'canva', name: 'Canva', icon: '🖼️' },
-  { id: 'leonardo', name: 'Leonardo AI', icon: '🎭' },
-  { id: 'midjourney', name: 'Midjourney', icon: '✨' },
-  { id: 'photoshop', name: 'Photoshop', icon: '📷' },
-  { id: 'illustrator', name: 'Illustrator', icon: '✏️' },
-  { id: 'procreate', name: 'Procreate', icon: '🖌️' },
-  { id: 'blender', name: 'Blender', icon: '🧊' },
-  { id: 'aftereffects', name: 'After Effects', icon: '🎬' },
-  { id: 'premiere', name: 'Premiere Pro', icon: '🎥' },
-  { id: 'davinci', name: 'DaVinci Resolve', icon: '🎞️' },
-  { id: 'sketch', name: 'Sketch', icon: '💎' },
-];
-
 // Default status options
 export const defaultStatuses = [
   { id: 'todo', name: 'To Do', color: '220 15% 50%' },

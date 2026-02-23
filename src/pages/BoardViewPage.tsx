@@ -3,6 +3,7 @@ import { useParams, Navigate, Link } from 'react-router-dom';
 import { ArrowLeft, Star, Plus, Trash2, Type, Hash, Calendar, Paperclip, Link as LinkIcon, Check, X, CheckSquare, Upload, FileIcon, Loader2 } from 'lucide-react';
 import { useBoards } from '@/contexts/BoardContext';
 import { useFocus, defaultStatuses } from '@/contexts/FocusContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -41,15 +42,51 @@ export default function BoardViewPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const { boards, toggleFavorite, addColumn, deleteColumn, updateColumn, updateBoard } = useBoards();
   const { focusMode, getColumnTypes } = useFocus();
+  const { settings } = useSettings();
 
   const board = boards.find(b => b.id === boardId);
   const colorConfig = board ? boardColorConfigs[board.color] || boardColorConfigs.coral : boardColorConfigs.coral;
 
   const [newColumnName, setNewColumnName] = useState('');
-  const [rows, setRows] = useState<{ id: string; cells: Record<string, string> }[]>([
-    { id: '1', cells: {} },
-  ]);
-  const [columnTypes, setColumnTypes] = useState<Record<string, ExtendedColumnType>>({});
+
+  // Initialize from board.data if available
+  const initialRows = board?.data?.rows || [{ id: '1', cells: {} }];
+  const initialColumnTypes = board?.data?.columnTypes || {};
+
+  const [rows, setRows] = useState<{ id: string; cells: Record<string, string> }[]>(initialRows);
+  const [columnTypes, setColumnTypes] = useState<Record<string, ExtendedColumnType>>(initialColumnTypes);
+
+  // Update local state when board data changes (e.g. from Quick Capture)
+  React.useEffect(() => {
+    if (board?.data?.rows) {
+      setRows(board.data.rows);
+    }
+    if (board?.data?.columnTypes) {
+      setColumnTypes(board.data.columnTypes);
+    }
+  }, [board?.id, JSON.stringify(board?.data)]);
+
+  // Auto-save changes back to the board
+  React.useEffect(() => {
+    if (!board) return;
+
+    const saveTimeout = setTimeout(async () => {
+      const currentData = board.data || {};
+      const newData = {
+        ...currentData,
+        rows,
+        columnTypes
+      };
+
+      // Only update if something actually changed to avoid infinite loops
+      if (JSON.stringify(currentData) !== JSON.stringify(newData)) {
+        await updateBoard(board.id, { data: newData });
+      }
+    }, 1000); // Debounce saves
+
+    return () => clearTimeout(saveTimeout);
+  }, [rows, columnTypes, board?.id]);
+
   const [editingCell, setEditingCell] = useState<{ rowId: string; colId: string } | null>(null);
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editingColumnName, setEditingColumnName] = useState('');
@@ -182,7 +219,10 @@ export default function BoardViewPage() {
       onChange: (e: React.ChangeEvent<HTMLInputElement>) => handleCellChange(rowId, colId, e.target.value),
       onBlur: () => setEditingCell(null),
       onFocus: () => setEditingCell({ rowId, colId }),
-      className: "h-9 border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent",
+      className: cn(
+        "border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent",
+        settings.compact_mode ? "h-7 text-xs" : "h-9 text-sm"
+      ),
     };
 
     switch (type) {
@@ -275,7 +315,7 @@ export default function BoardViewPage() {
   };
 
   return (
-    <div className={cn("h-full flex flex-col -m-3 md:-m-6 bg-gradient-to-br transition-colors duration-500", colorConfig.gradient)}>
+    <div className={cn("h-full flex flex-col bg-gradient-to-br transition-colors duration-500", colorConfig.gradient)}>
       <input
         ref={fileInputRef}
         type="file"
@@ -284,7 +324,12 @@ export default function BoardViewPage() {
         accept="*/*"
       />
 
-      <div className={cn("p-4 md:p-6 border-b backdrop-blur-md sticky top-0 z-20 transition-colors", colorConfig.border, colorConfig.light)}>
+      <div className={cn(
+        "border-b backdrop-blur-md sticky top-0 z-20 transition-colors",
+        colorConfig.border,
+        colorConfig.light,
+        settings.compact_mode ? "p-2 md:p-3" : "p-4 md:p-6"
+      )}>
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -303,7 +348,10 @@ export default function BoardViewPage() {
                 <Input
                   value={boardNameEdit}
                   onChange={(e) => setBoardNameEdit(e.target.value)}
-                  className="font-display text-xl md:text-2xl font-bold h-auto py-1 bg-background/50 border-primary/20"
+                  className={cn(
+                    "font-display font-bold h-auto py-1 bg-background/50 border-primary/20",
+                    settings.compact_mode ? "text-lg" : "text-xl md:text-2xl"
+                  )}
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') saveBoardName();
@@ -319,7 +367,11 @@ export default function BoardViewPage() {
               </div>
             ) : (
               <h1
-                className={cn("font-display text-xl md:text-2xl font-bold cursor-pointer hover:opacity-80 transition-all", colorConfig.text)}
+                className={cn(
+                  "font-display font-bold cursor-pointer hover:opacity-80 transition-all",
+                  colorConfig.text,
+                  settings.compact_mode ? "text-lg" : "text-xl md:text-2xl"
+                )}
                 onClick={startEditingBoardName}
                 title="Click to edit board name"
               >
@@ -347,9 +399,13 @@ export default function BoardViewPage() {
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="min-w-max p-4 md:p-6">
+        <div className={cn("min-w-max", settings.compact_mode ? "p-2 md:p-3" : "p-4 md:p-6")}>
           <div className={cn("flex border-b sticky top-0 z-10 backdrop-blur-sm rounded-t-xl overflow-hidden", colorConfig.border, "bg-background/40")}>
-            <div className={cn("w-12 shrink-0 px-2 py-3 border-r flex items-center justify-center", colorConfig.border)}>
+            <div className={cn(
+              "w-12 shrink-0 px-2 border-r flex items-center justify-center",
+              settings.compact_mode ? "py-1.5" : "py-3",
+              colorConfig.border
+            )}>
               <span className="text-xs text-muted-foreground font-medium">#</span>
             </div>
 
@@ -364,7 +420,10 @@ export default function BoardViewPage() {
                     key={column.id}
                     className={cn("w-48 shrink-0 border-r", colorConfig.border)}
                   >
-                    <div className="flex items-center justify-between px-3 py-3 group">
+                    <div className={cn(
+                      "flex items-center justify-between px-3 group",
+                      settings.compact_mode ? "py-1.5" : "py-3"
+                    )}>
                       {isEditing ? (
                         <div className="flex items-center gap-1 flex-1">
                           <Input
@@ -417,13 +476,19 @@ export default function BoardViewPage() {
               })
             ) : null}
 
-            <div className="w-48 shrink-0 px-3 py-3">
+            <div className={cn(
+              "w-48 shrink-0 px-3",
+              settings.compact_mode ? "py-1.5" : "py-3"
+            )}>
               <form onSubmit={handleAddColumn} className="flex gap-2">
                 <Input
                   placeholder="New column..."
                   value={newColumnName}
                   onChange={(e) => setNewColumnName(e.target.value)}
-                  className="h-8 text-sm bg-background/30 border-transparent focus:border-primary/30"
+                  className={cn(
+                    "bg-background/30 border-transparent focus:border-primary/30",
+                    settings.compact_mode ? "h-7 text-xs" : "h-8 text-sm"
+                  )}
                 />
               </form>
             </div>
@@ -432,15 +497,22 @@ export default function BoardViewPage() {
           <div className={cn("bg-background/20 rounded-b-xl border border-t-0 overflow-hidden shadow-sm", colorConfig.border)}>
             {rows.map((row, rowIndex) => (
               <div key={row.id} className={cn("flex border-b hover:bg-background/30 transition-colors group last:border-0", colorConfig.border)}>
-                <div className={cn("w-12 shrink-0 px-2 py-1 border-r flex items-center justify-center relative", colorConfig.border)}>
+                <div className={cn(
+                  "w-12 shrink-0 px-2 border-r flex items-center justify-center relative",
+                  settings.compact_mode ? "py-0.5" : "py-1",
+                  colorConfig.border
+                )}>
                   <span className="text-xs text-muted-foreground/60 group-hover:opacity-0">{rowIndex + 1}</span>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 absolute opacity-0 group-hover:opacity-100 transition-opacity"
+                    className={cn(
+                      "absolute opacity-0 group-hover:opacity-100 transition-opacity",
+                      settings.compact_mode ? "h-5 w-5" : "h-6 w-6"
+                    )}
                     onClick={() => handleDeleteRow(row.id)}
                   >
-                    <Trash2 className="h-3.5 w-3.5 text-destructive/70 hover:text-destructive" />
+                    <Trash2 className={cn("text-destructive/70 hover:text-destructive", settings.compact_mode ? "h-3 w-3" : "h-3.5 w-3.5")} />
                   </Button>
                 </div>
 
@@ -459,9 +531,12 @@ export default function BoardViewPage() {
 
             <button
               onClick={handleAddRow}
-              className="w-full px-5 py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-background/40 transition-all flex items-center gap-2 font-medium"
+              className={cn(
+                "w-full text-muted-foreground hover:text-foreground hover:bg-background/40 transition-all flex items-center gap-2 font-medium",
+                settings.compact_mode ? "px-3 py-1.5 text-xs" : "px-5 py-3 text-sm"
+              )}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className={cn(settings.compact_mode ? "h-3.5 w-3.5" : "h-4 w-4")} />
               Add new row
             </button>
           </div>

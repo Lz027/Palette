@@ -16,23 +16,16 @@ import paletteLogo from '@/assets/palette-logo.jpeg';
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
-  const { settings, profile, updateSettings, updateProfile, isLoading } = useSettings();
+  const { settings, updateSettings, isLoading } = useSettings();
 
-  const [profileForm, setProfileForm] = useState({
-    display_name: profile.display_name,
-    bio: profile.bio,
-  });
+  const [localSettings, setLocalSettings] = useState(settings);
 
-  // Sync internal form state when profile data is loaded from context
   useEffect(() => {
-    setProfileForm({
-      display_name: profile.display_name || '',
-      bio: profile.bio || '',
-    });
-  }, [profile]);
+    setLocalSettings(settings);
+  }, [settings]);
 
-  const handleProfileUpdate = async () => {
-    await updateProfile(profileForm);
+  const handleSaveSettings = async () => {
+    await updateSettings(localSettings);
   };
 
   const themeOptions = [
@@ -47,41 +40,6 @@ export default function SettingsPage() {
         <h1 className="font-display text-2xl md:text-3xl font-bold">Settings</h1>
         <p className="text-muted-foreground mt-1">Customize your Palette experience</p>
       </div>
-
-      {/* Profile Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-display text-lg flex items-center gap-2">
-            <User className="h-5 w-5 text-primary" />
-            Profile
-          </CardTitle>
-          <CardDescription>Update your personal information</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="display_name">Display Name</Label>
-            <Input
-              id="display_name"
-              value={profileForm.display_name}
-              onChange={(e) => setProfileForm(prev => ({ ...prev, display_name: e.target.value }))}
-              placeholder="Your name"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea
-              id="bio"
-              value={profileForm.bio}
-              onChange={(e) => setProfileForm(prev => ({ ...prev, bio: e.target.value }))}
-              placeholder="Tell us about yourself"
-              rows={3}
-            />
-          </div>
-          <Button onClick={handleProfileUpdate} disabled={isLoading} className="w-full sm:w-auto">
-            {isLoading ? "Saving..." : "Save Profile"}
-          </Button>
-        </CardContent>
-      </Card>
 
       {/* Appearance Section */}
       <Card>
@@ -147,8 +105,8 @@ export default function SettingsPage() {
             </div>
             <Switch
               id="reminders_enabled"
-              checked={settings.reminders_enabled}
-              onCheckedChange={(checked) => updateSettings({ reminders_enabled: checked })}
+              checked={localSettings.reminders_enabled}
+              onCheckedChange={(checked) => setLocalSettings(prev => ({ ...prev, reminders_enabled: checked }))}
               disabled={isLoading}
             />
           </div>
@@ -168,10 +126,10 @@ export default function SettingsPage() {
               </div>
               <Input
                 type="time"
-                value={settings.morning_reminder}
-                onChange={(e) => updateSettings({ morning_reminder: e.target.value })}
+                value={localSettings.morning_reminder}
+                onChange={(e) => setLocalSettings(prev => ({ ...prev, morning_reminder: e.target.value }))}
                 className="w-24"
-                disabled={!settings.reminders_enabled || isLoading}
+                disabled={!localSettings.reminders_enabled || isLoading}
               />
             </div>
 
@@ -187,13 +145,17 @@ export default function SettingsPage() {
               </div>
               <Input
                 type="time"
-                value={settings.evening_reminder}
-                onChange={(e) => updateSettings({ evening_reminder: e.target.value })}
+                value={localSettings.evening_reminder}
+                onChange={(e) => setLocalSettings(prev => ({ ...prev, evening_reminder: e.target.value }))}
                 className="w-24"
-                disabled={!settings.reminders_enabled || isLoading}
+                disabled={!localSettings.reminders_enabled || isLoading}
               />
             </div>
           </div>
+
+          <Button onClick={handleSaveSettings} disabled={isLoading} className="w-full sm:w-auto">
+            {isLoading ? "Saving Settings..." : "Save Notification Settings"}
+          </Button>
         </CardContent>
       </Card>
 
@@ -216,8 +178,8 @@ export default function SettingsPage() {
             </div>
             <Switch
               id="compact"
-              checked={settings.compact_mode}
-              onCheckedChange={(checked) => updateSettings({ compact_mode: checked })}
+              checked={localSettings.compact_mode}
+              onCheckedChange={(checked) => setLocalSettings(prev => ({ ...prev, compact_mode: checked }))}
               disabled={isLoading}
             />
           </div>
@@ -236,11 +198,15 @@ export default function SettingsPage() {
             </div>
             <Switch
               id="quickcapture"
-              checked={settings.quick_capture}
-              onCheckedChange={(checked) => updateSettings({ quick_capture: checked })}
+              checked={localSettings.quick_capture}
+              onCheckedChange={(checked) => setLocalSettings(prev => ({ ...prev, quick_capture: checked }))}
               disabled={isLoading}
             />
           </div>
+
+          <Button onClick={handleSaveSettings} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
+            Save Preferences
+          </Button>
         </CardContent>
       </Card>
 

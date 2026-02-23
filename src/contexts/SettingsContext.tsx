@@ -9,10 +9,6 @@ interface UserSettings {
     reminders_enabled: boolean;
     morning_reminder: string;
     evening_reminder: string;
-    openai_key_encrypted?: string;
-    gemini_key_encrypted?: string;
-    claude_key_encrypted?: string;
-    ai_enabled: boolean;
 }
 
 interface UserProfile {
@@ -37,7 +33,6 @@ const defaultSettings: UserSettings = {
     reminders_enabled: true,
     morning_reminder: '09:00',
     evening_reminder: '17:00',
-    ai_enabled: false,
 };
 
 const defaultProfile: UserProfile = {
@@ -75,10 +70,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                     reminders_enabled: settingsData.reminders_enabled ?? defaultSettings.reminders_enabled,
                     morning_reminder: settingsData.morning_reminder ?? defaultSettings.morning_reminder,
                     evening_reminder: settingsData.evening_reminder ?? defaultSettings.evening_reminder,
-                    openai_key_encrypted: settingsData.openai_key_encrypted,
-                    gemini_key_encrypted: settingsData.gemini_key_encrypted,
-                    claude_key_encrypted: settingsData.claude_key_encrypted,
-                    ai_enabled: settingsData.ai_enabled ?? defaultSettings.ai_enabled,
                 });
             }
 

@@ -148,7 +148,7 @@ export function BoardCard({ board }: BoardCardProps) {
               <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                 <span>{board.columns.length} columns</span>
                 <span>•</span>
-                <span>{totalTasks} items</span>
+                <span>{totalTasks}</span>
               </div>
             </div>
 

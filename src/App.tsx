@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BoardProvider } from "@/contexts/BoardContext";
 import { FocusProvider } from "@/contexts/FocusContext";
+import { SettingsProvider } from "@/contexts/SettingsContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
@@ -28,40 +29,42 @@ const App = () => (
     <ThemeProvider>
       <AuthProvider>
         <FocusProvider>
-          <BoardProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  {/* Public routes */}
-                  <Route path="/login" element={<LoginPage />} />
-                  
-                  {/* Auth callback - handles OAuth redirects */}
-                  <Route path="/auth/callback" element={<Navigate to="/dashboard" replace />} />
-                  
-                  {/* Protected routes with layout */}
-                  <Route element={
-                    <ProtectedRoute>
-                      <AppLayout />
-                    </ProtectedRoute>
-                  }>
-                    <Route index element={<Navigate to="/dashboard" replace />} />
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/boards" element={<BoardsPage />} />
-                    <Route path="/boards/new" element={<NewBoardPage />} />
-                    <Route path="/boards/:boardId" element={<BoardViewPage />} />
-                    <Route path="/favorites" element={<FavoritesPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                  </Route>
+          <SettingsProvider>
+            <BoardProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    {/* Public routes */}
+                    <Route path="/login" element={<LoginPage />} />
 
-                  {/* Catch-all */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
-          </BoardProvider>
+                    {/* Auth callback - handles OAuth redirects */}
+                    <Route path="/auth/callback" element={<Navigate to="/dashboard" replace />} />
+
+                    {/* Protected routes with layout */}
+                    <Route element={
+                      <ProtectedRoute>
+                        <AppLayout />
+                      </ProtectedRoute>
+                    }>
+                      <Route index element={<Navigate to="/dashboard" replace />} />
+                      <Route path="/dashboard" element={<DashboardPage />} />
+                      <Route path="/boards" element={<BoardsPage />} />
+                      <Route path="/boards/new" element={<NewBoardPage />} />
+                      <Route path="/boards/:boardId" element={<BoardViewPage />} />
+                      <Route path="/favorites" element={<FavoritesPage />} />
+                      <Route path="/profile" element={<ProfilePage />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                    </Route>
+
+                    {/* Catch-all */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </BoardProvider>
+          </SettingsProvider>
         </FocusProvider>
       </AuthProvider>
     </ThemeProvider>

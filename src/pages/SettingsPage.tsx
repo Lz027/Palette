@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Sun, Moon, Monitor, Palette, Bell, Zap, Clock, User, Mail, Shield, Check, Brain, Key } from 'lucide-react';
+import { Sun, Moon, Monitor, Palette, Bell, Zap, Clock, User, Mail, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import paletteLogo from '@/assets/palette-logo.jpeg';
 
@@ -23,18 +23,16 @@ export default function SettingsPage() {
     bio: profile.bio,
   });
 
-  const [aiKeys, setAiKeys] = useState({
-    openai_key_encrypted: settings.openai_key_encrypted || '',
-    gemini_key_encrypted: settings.gemini_key_encrypted || '',
-    claude_key_encrypted: settings.claude_key_encrypted || '',
-  });
+  // Sync internal form state when profile data is loaded from context
+  useEffect(() => {
+    setProfileForm({
+      display_name: profile.display_name || '',
+      bio: profile.bio || '',
+    });
+  }, [profile]);
 
   const handleProfileUpdate = async () => {
     await updateProfile(profileForm);
-  };
-
-  const handleAiKeysUpdate = async () => {
-    await updateSettings(aiKeys);
   };
 
   const themeOptions = [
@@ -80,7 +78,7 @@ export default function SettingsPage() {
             />
           </div>
           <Button onClick={handleProfileUpdate} disabled={isLoading} className="w-full sm:w-auto">
-            Save Profile
+            {isLoading ? "Saving..." : "Save Profile"}
           </Button>
         </CardContent>
       </Card>
@@ -124,83 +122,6 @@ export default function SettingsPage() {
               );
             })}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* AI Settings Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-display text-lg flex items-center gap-2">
-            <Brain className="h-5 w-5 text-primary" />
-            AI Configuration
-          </CardTitle>
-          <CardDescription>Manage your AI models and API keys</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label htmlFor="ai_enabled" className="font-medium">Enable AI Features</Label>
-              <p className="text-sm text-muted-foreground">
-                Activate intelligent task suggestions and search
-              </p>
-            </div>
-            <Switch
-              id="ai_enabled"
-              checked={settings.ai_enabled}
-              onCheckedChange={(checked) => updateSettings({ ai_enabled: checked })}
-              disabled={isLoading}
-            />
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="openai_key" className="flex items-center gap-2">
-                <Key className="h-4 w-4" />
-                OpenAI API Key
-              </Label>
-              <Input
-                id="openai_key"
-                type="password"
-                value={aiKeys.openai_key_encrypted}
-                onChange={(e) => setAiKeys(prev => ({ ...prev, openai_key_encrypted: e.target.value }))}
-                placeholder="sk-..."
-                disabled={!settings.ai_enabled}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="gemini_key" className="flex items-center gap-2">
-                <Key className="h-4 w-4" />
-                Google Gemini API Key
-              </Label>
-              <Input
-                id="gemini_key"
-                type="password"
-                value={aiKeys.gemini_key_encrypted}
-                onChange={(e) => setAiKeys(prev => ({ ...prev, gemini_key_encrypted: e.target.value }))}
-                placeholder="AIza..."
-                disabled={!settings.ai_enabled}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="claude_key" className="flex items-center gap-2">
-                <Key className="h-4 w-4" />
-                Anthropic Claude API Key
-              </Label>
-              <Input
-                id="claude_key"
-                type="password"
-                value={aiKeys.claude_key_encrypted}
-                onChange={(e) => setAiKeys(prev => ({ ...prev, claude_key_encrypted: e.target.value }))}
-                placeholder="sk-ant-..."
-                disabled={!settings.ai_enabled}
-              />
-            </div>
-          </div>
-          <Button onClick={handleAiKeysUpdate} disabled={isLoading || !settings.ai_enabled} className="w-full sm:w-auto">
-            Save AI Keys
-          </Button>
         </CardContent>
       </Card>
 

@@ -31,9 +31,9 @@ export function BoardCard({ board }: BoardCardProps) {
   const { toggleFavorite, deleteBoard, updateBoard } = useBoards();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(board.name);
-  
-  const totalCards = board.columns.reduce((acc, col) => acc + col.cards.length, 0);
-  
+
+  const totalTasks = board.columns.reduce((acc, col) => acc + col.cards.length, 0);
+
   const handleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -58,7 +58,7 @@ export function BoardCard({ board }: BoardCardProps) {
   const saveEdit = async (e?: React.MouseEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
-    
+
     if (editName.trim() && editName !== board.name) {
       await updateBoard(board.id, { name: editName.trim() });
     }
@@ -82,7 +82,7 @@ export function BoardCard({ board }: BoardCardProps) {
     <Link to={`/boards/${board.id}`}>
       <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-transparent hover:border-primary/20">
         {/* Color Banner */}
-        <div 
+        <div
           className={cn(
             "h-24 bg-gradient-to-br relative",
             boardColorClasses[board.color] || 'from-primary to-secondary'
@@ -130,7 +130,7 @@ export function BoardCard({ board }: BoardCardProps) {
                   </Button>
                 </div>
               ) : (
-                <h3 
+                <h3
                   className="font-medium truncate group-hover:text-primary transition-colors cursor-pointer"
                   onClick={startEditing}
                   title="Click to rename"
@@ -138,26 +138,26 @@ export function BoardCard({ board }: BoardCardProps) {
                   {board.name}
                 </h3>
               )}
-              
+
               {board.description && !isEditing && (
                 <p className="text-xs text-muted-foreground truncate mt-1">
                   {board.description}
                 </p>
               )}
-              
+
               <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                 <span>{board.columns.length} columns</span>
                 <span>•</span>
-                <span>{totalCards} cards</span>
+                <span>{totalTasks} items</span>
               </div>
             </div>
 
             {!isEditing && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                     onClick={(e) => e.preventDefault()}
                   >

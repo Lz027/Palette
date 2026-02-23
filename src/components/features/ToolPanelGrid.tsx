@@ -5,42 +5,8 @@ import { useFocus, FocusMode } from '@/contexts/FocusContext';
 import { CodeSnippets } from '@/components/features/CodeSnippets';
 import { NoteTaker } from '@/components/features/NoteTaker';
 import { ImageEditor } from '@/components/features/ImageEditor';
-
-// Tool data
-const techTools = [
-  { id: 'lovable', name: 'Lovable', logo: 'https://lovable.dev/favicon.ico', url: 'https://lovable.dev' },
-  { id: 'replit', name: 'Replit', logo: 'https://cdn.replit.com/dotcom/favicon.ico', url: 'https://replit.com' },
-  { id: 'cursor', name: 'Cursor', logo: 'https://www.cursor.com/favicon.ico', url: 'https://cursor.com' },
-  { id: 'manus', name: 'Manus', logo: 'https://manus.im/favicon.svg', url: 'https://manus.im' },
-  { id: 'github', name: 'GitHub', logo: 'https://github.githubassets.com/favicons/favicon.svg', url: 'https://github.com' },
-  { id: 'supabase', name: 'Supabase', logo: 'https://supabase.com/favicon/favicon-32x32.png', url: 'https://supabase.com' },
-];
-
-const designTools = [
-  { id: 'figma', name: 'Figma', logo: 'https://static.figma.com/app/icon/1/favicon.png', url: 'https://figma.com' },
-  { id: 'canva', name: 'Canva', logo: 'https://static.canva.com/static/images/favicon-1.ico', url: 'https://canva.com' },
-  { id: 'leonardo', name: 'Leonardo', logo: 'https://leonardo.ai/favicon.ico', url: 'https://leonardo.ai' },
-  { id: 'midjourney', name: 'Midjourney', logo: 'https://www.midjourney.com/favicon.ico', url: 'https://midjourney.com' },
-  { id: 'photopea', name: 'Photopea', logo: 'https://www.photopea.com/promo/icon512.png', url: 'https://photopea.com' },
-  { id: 'coolors', name: 'Coolors', logo: 'https://coolors.co/assets/img/favicon.png', url: 'https://coolors.co' },
-];
-
-const productivityTools = [
-  { id: 'linear', name: 'Linear', logo: 'https://linear.app/favicon.ico', url: 'https://linear.app' },
-  { id: 'slack', name: 'Slack', logo: 'https://a.slack-edge.com/80588/marketing/img/meta/favicon-32.png', url: 'https://slack.com' },
-  { id: 'genspark', name: 'Genspark', logo: 'https://www.genspark.ai/favicon.ico', url: 'https://genspark.ai' },
-  { id: 'excalidraw', name: 'Excalidraw', logo: 'https://excalidraw.com/favicon.ico', url: 'https://excalidraw.com' },
-  { id: 'todoist', name: 'Todoist', logo: 'https://todoist.com/favicon.ico', url: 'https://todoist.com' },
-  { id: 'poe', name: 'Poe AI', logo: 'https://poe.com/favicon.ico', url: 'https://poe.com' },
-];
-
-const getToolsForMode = (mode: FocusMode) => {
-  switch (mode) {
-    case 'tech': return techTools;
-    case 'design': return designTools;
-    case 'productive': return productivityTools;
-  }
-};
+import { useFocusTools } from '@/hooks/useFocusTools';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const getSpecialToolInfo = (mode: FocusMode) => {
   switch (mode) {
@@ -55,8 +21,8 @@ type OpenPanel = 'tools' | 'special' | null;
 export function ToolPanelGrid() {
   const { focusMode, colors } = useFocus();
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
-  
-  const tools = getToolsForMode(focusMode);
+
+  const { tools, loading } = useFocusTools();
   const specialTool = getSpecialToolInfo(focusMode);
 
   const togglePanel = (panel: OpenPanel) => {
@@ -129,23 +95,36 @@ export function ToolPanelGrid() {
           <div className="p-3">
             {openPanel === 'tools' ? (
               <div className="grid grid-cols-3 gap-2">
-                {tools.map((tool) => (
-                  <a
-                    key={tool.id}
-                    href={tool.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-1.5 p-2.5 rounded-lg bg-muted/50 hover:bg-muted active:scale-95 transition-all touch-manipulation"
-                  >
-                    <img
-                      src={tool.logo}
-                      alt={tool.name}
-                      className="w-8 h-8 rounded-lg object-contain"
-                      onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
-                    />
-                    <span className="text-[11px] text-center font-medium truncate w-full">{tool.name}</span>
-                  </a>
-                ))}
+                {loading ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-muted/20 animate-pulse">
+                      <Skeleton className="w-8 h-8 rounded-lg" />
+                      <Skeleton className="h-2 w-10" />
+                    </div>
+                  ))
+                ) : (
+                  tools.map((tool) => (
+                    <a
+                      key={tool.id}
+                      href={tool.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 active:scale-95 transition-all touch-manipulation border border-border/40"
+                    >
+                      <div className="relative p-1 bg-background rounded-lg shadow-sm">
+                        <img
+                          src={tool.logo}
+                          alt={tool.name}
+                          className="w-8 h-8 rounded-md object-contain"
+                          onError={(e) => {
+                            e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(tool.name)}&background=random&color=fff&size=64`;
+                          }}
+                        />
+                      </div>
+                      <span className="text-[11px] text-center font-semibold truncate w-full">{tool.name}</span>
+                    </a>
+                  ))
+                )}
               </div>
             ) : (
               <div className="-m-3">
@@ -158,3 +137,4 @@ export function ToolPanelGrid() {
     </div>
   );
 }
+

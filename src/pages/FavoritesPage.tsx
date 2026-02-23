@@ -5,9 +5,12 @@ import { useBoards } from '@/contexts/BoardContext';
 import { Button } from '@/components/ui/button';
 import { BoardCard } from '@/components/boards/BoardCard';
 
+import { useFocus } from '@/contexts/FocusContext';
+
 export default function FavoritesPage() {
   const { boards } = useBoards();
-  const favoriteBoards = boards.filter(b => b.isFavorite);
+  const { focusMode } = useFocus();
+  const favoriteBoards = boards.filter(b => b.isFavorite && b.focusMode === focusMode);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">

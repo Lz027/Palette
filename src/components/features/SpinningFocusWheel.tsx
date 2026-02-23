@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Code, Palette, Target } from 'lucide-react';
+import { Code, Palette, Target, Sparkles, X } from 'lucide-react';
 import { useFocus } from '@/contexts/FocusContext';
-import type { FocusMode } from '@/contexts/FocusContext';
+import { FocusMode } from '@/types';
 
 interface SpinningFocusWheelProps {
   className?: string;
@@ -20,11 +20,31 @@ export function SpinningFocusWheel({ className, size = 'default' }: SpinningFocu
   const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [startAngle, setStartAngle] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [burstActive, setBurstActive] = useState(false);
   const wheelRef = useRef<HTMLDivElement>(null);
-  
+
   const isCompact = size === 'compact';
   const currentIndex = focusModes.findIndex(m => m.id === focusMode);
   const currentMode = focusModes[currentIndex];
+
+  useEffect(() => {
+    const hasSeenOnboarding = localStorage.getItem('focus_wheel_onboarding');
+    if (!hasSeenOnboarding) {
+      setShowOnboarding(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    setBurstActive(true);
+    const timer = setTimeout(() => setBurstActive(false), 600);
+    return () => clearTimeout(timer);
+  }, [focusMode]);
+
+  const closeOnboarding = () => {
+    setShowOnboarding(false);
+    localStorage.setItem('focus_wheel_onboarding', 'true');
+  };
 
   const getAngle = (e: React.Touch | React.MouseEvent) => {
     if (!wheelRef.current) return 0;
@@ -40,6 +60,7 @@ export function SpinningFocusWheel({ className, size = 'default' }: SpinningFocu
     setIsDragging(true);
     const touch = 'touches' in e ? e.touches[0] : e;
     setStartAngle(getAngle(touch as React.Touch) - rotation);
+    if (showOnboarding) closeOnboarding();
   };
 
   const handleMove = (e: React.TouchEvent | React.MouseEvent) => {
@@ -52,14 +73,14 @@ export function SpinningFocusWheel({ className, size = 'default' }: SpinningFocu
   const handleEnd = () => {
     if (!isDragging) return;
     setIsDragging(false);
-    
+
     // Snap to nearest mode (every 120 degrees)
     const normalizedRotation = ((rotation % 360) + 360) % 360;
     const modeIndex = Math.round(normalizedRotation / 120) % 3;
     const snappedRotation = modeIndex * 120;
-    
+
     setRotation(snappedRotation);
-    
+
     // Map rotation to mode
     const modes: FocusMode[] = ['tech', 'productive', 'design'];
     const selectedMode = modes[modeIndex];
@@ -73,6 +94,7 @@ export function SpinningFocusWheel({ className, size = 'default' }: SpinningFocu
     const nextIndex = (currentIndex + 1) % focusModes.length;
     setRotation((nextIndex) * 120);
     setFocusMode(focusModes[nextIndex].id);
+    if (showOnboarding) closeOnboarding();
   };
 
   // Sizing based on variant
@@ -83,26 +105,53 @@ export function SpinningFocusWheel({ className, size = 'default' }: SpinningFocu
 
   return (
     <div className={cn("flex flex-col items-center", isCompact ? "gap-0" : "gap-2", className)}>
-      {/* Spinning Wheel */}
-      <div
-        ref={wheelRef}
-        className={cn(wheelSize, "relative cursor-grab active:cursor-grabbing touch-none")}
-        onTouchStart={handleStart}
-        onTouchMove={handleMove}
-        onTouchEnd={handleEnd}
-        onMouseDown={handleStart}
-        onMouseMove={handleMove}
-        onMouseUp={handleEnd}
-        onMouseLeave={() => isDragging && handleEnd()}
-        onClick={!isDragging ? handleClick : undefined}
-      >
-        {/* Outer ring */}
-        <div className="absolute inset-0 rounded-full border-2 border-border bg-card shadow-lg">
+      <div className="relative">
+        {/* Onboarding Notice */}
+        {showOnboarding && !isCompact && (
+          <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-48 z-50 animate-in fade-in zoom-in duration-300">
+            <div className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-xs font-medium shadow-xl relative">
+              <Sparkles className="w-3.5 h-3.5 absolute -top-1.5 -left-1.5 text-warning fill-warning" />
+              Spin the wheel to shift your focus!
+              <button onClick={closeOnboarding} className="absolute top-1 right-1 hover:bg-black/10 rounded">
+                <X className="w-3 h-3" />
+              </button>
+              {/* Arrow */}
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rotate-45" />
+            </div>
+          </div>
+        )}
+
+        {/* Color Burst Effect */}
+        {burstActive && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+            <div className={cn(
+              "w-full h-full rounded-full opacity-0 animate-color-burst",
+              currentMode.bgColor
+            )} />
+          </div>
+        )}
+
+        {/* Spinning Wheel */}
+        <div
+          ref={wheelRef}
+          className={cn(wheelSize, "relative cursor-grab active:cursor-grabbing touch-none z-10")}
+          onTouchStart={handleStart}
+          onTouchMove={handleMove}
+          onTouchEnd={handleEnd}
+          onMouseDown={handleStart}
+          onMouseMove={handleMove}
+          onMouseUp={handleEnd}
+          onMouseLeave={() => isDragging && handleEnd()}
+          onClick={!isDragging ? handleClick : undefined}
+        >
+          {/* Outer ring */}
+          <div className="absolute inset-0 rounded-full border-2 border-border bg-card shadow-lg" />
+
           {/* Rotating segments */}
           <div
             className={cn(
               "absolute inset-1 transition-transform",
-              !isDragging && "duration-300 ease-out"
+              !isDragging && "duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
             )}
             style={{ transform: `rotate(${rotation}deg)` }}
           >
@@ -112,15 +161,16 @@ export function SpinningFocusWheel({ className, size = 'default' }: SpinningFocu
               const x = Math.cos(radians) * segmentOffset;
               const y = Math.sin(radians) * segmentOffset;
               const halfSize = isCompact ? 8 : 16;
-              
+
               return (
                 <div
                   key={mode.id}
                   className={cn(
-                    "absolute rounded-full flex items-center justify-center shadow-md transition-all",
+                    "absolute rounded-full flex items-center justify-center shadow-md transition-all active:scale-95",
                     segmentSize,
                     mode.bgColor,
-                    "text-white"
+                    "text-white",
+                    focusMode === mode.id && !isDragging && "ring-2 ring-white/50 ring-offset-1 ring-offset-transparent"
                   )}
                   style={{
                     left: `calc(50% + ${x}px - ${halfSize}px)`,
@@ -137,30 +187,36 @@ export function SpinningFocusWheel({ className, size = 'default' }: SpinningFocu
               );
             })}
           </div>
-          
+
           {/* Center indicator */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className={cn(
-              "rounded-full border-2 border-background shadow-inner",
+              "rounded-full border-2 border-background shadow-inner transition-colors duration-500",
               centerSize,
-              currentMode.bgColor
+              currentMode.bgColor,
+              showOnboarding && "animate-slow-pulse"
             )} />
           </div>
         </div>
-        
+
         {/* Selection indicator (top) */}
-        <div className={cn(
-          "absolute left-1/2 -translate-x-1/2 w-0 h-0 border-l-transparent border-r-transparent border-t-primary",
-          isCompact 
-            ? "-top-0.5 border-l-[3px] border-r-[3px] border-t-[4px]"
-            : "-top-1 border-l-[6px] border-r-[6px] border-t-[8px]"
-        )} />
+        {!isDragging && (
+          <div className={cn(
+            "absolute left-1/2 -translate-x-1/2 w-0 h-0 border-l-transparent border-r-transparent border-t-primary z-20 transition-all duration-300",
+            isCompact
+              ? "-top-0.5 border-l-[3px] border-r-[3px] border-t-[4px]"
+              : "-top-1 border-l-[6px] border-r-[6px] border-t-[8px]"
+          )} />
+        )}
       </div>
-      
+
       {/* Current mode label - hide on compact */}
       {!isCompact && (
-        <div className="text-center">
-          <p className={cn("text-sm font-semibold", currentMode.color)}>
+        <div className="text-center animate-in fade-in slide-in-from-bottom-1 duration-500">
+          <p className={cn("text-xs font-bold uppercase tracking-wider opacity-60")}>
+            Focus Mode
+          </p>
+          <p className={cn("text-sm font-bold", currentMode.color)}>
             {currentMode.label}
           </p>
         </div>

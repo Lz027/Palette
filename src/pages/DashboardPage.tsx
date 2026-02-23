@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { Plus, ArrowRight } from 'lucide-react';
 import { useBoards } from '@/contexts/BoardContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useFocus, FocusMode } from '@/contexts/FocusContext';
+import { useFocus } from '@/contexts/FocusContext';
+import { FocusMode } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { BoardCard } from '@/components/boards/BoardCard';
@@ -21,9 +22,9 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const { colors, focusMode } = useFocus();
   const isMobile = useIsMobile();
-  
-  const favoriteBoards = boards.filter(b => b.isFavorite);
-  const recentBoards = boards.slice(-4).reverse();
+
+  const favoriteBoards = boards.filter(b => b.isFavorite && b.focusMode === focusMode);
+  const recentBoards = boards.filter(b => b.focusMode === focusMode).slice(-4).reverse();
 
   const greeting = () => {
     const hour = new Date().getHours();
@@ -84,7 +85,7 @@ export default function DashboardPage() {
             </Link>
           </Button>
         </div>
-        
+
         {recentBoards.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
             {recentBoards.map(board => <BoardCard key={board.id} board={board} />)}

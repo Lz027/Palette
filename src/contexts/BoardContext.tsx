@@ -1,37 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
-import { toast } from 'sonner';
-import { FocusMode } from '@/contexts/FocusContext';
+import { Board, Column, Card, FocusMode } from '@/types';
 
-interface Card {
-  id: string;
-  title: string;
-  description?: string;
-  dueDate?: Date;
-}
-
-interface Column {
-  id: string;
-  title: string;
-  cards: Card[];
-}
-
-interface Board {
-  id: string;
-  name: string;
-  color: string;
-  isFavorite: boolean;
-  columns: Column[];
-  createdAt: Date;
-  userId: string;
-  focusMode?: FocusMode;
-  template?: string;
-}
 
 interface BoardContextType {
   boards: Board[];
-  createBoard: (name: string, color: string, template?: string, focusMode?: FocusMode) => Promise<Board>;
+  createBoard: (name: string, template: string, color: string, description: string, focusMode: FocusMode) => Promise<Board>;
   updateBoard: (id: string, updates: Partial<Board>) => Promise<void>;
   deleteBoard: (id: string) => Promise<void>;
   toggleFavorite: (id: string) => Promise<void>;
@@ -41,20 +16,19 @@ interface BoardContextType {
   updateColumn: (boardId: string, columnId: string, title: string) => Promise<void>;
   deleteColumn: (boardId: string, columnId: string) => Promise<void>;
   isLoading: boolean;
-  focusMode: FocusMode;
-  setFocusMode: (mode: FocusMode) => void;
 }
 
 const BoardContext = createContext<BoardContextType | undefined>(undefined);
 
+// Fallback ID generator for browsers without crypto.randomUUID
 const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString(36);
 
 export function BoardProvider({ children }: { children: React.ReactNode }) {
   const [boards, setBoards] = useState<Board[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [focusMode, setFocusMode] = useState<FocusMode>('productive');
   const { user } = useAuth();
 
+  // Load boards from Supabase
   useEffect(() => {
     if (!user) {
       setBoards([]);
@@ -72,18 +46,19 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Error fetching boards:', error);
-        toast.error('Failed to load boards');
       } else {
         setBoards(data.map(b => ({
           id: b.id,
           name: b.name,
+          description: b.description,
           color: b.color,
+          template: b.template_type || 'canvas',
           isFavorite: b.is_favorite,
           columns: b.columns || [],
           createdAt: new Date(b.created_at),
-          userId: b.user_id,
-          focusMode: b.focus_mode,
-          template: b.template
+          updatedAt: new Date(b.created_at), // Use created_at if updated_at is null
+          ownerId: b.user_id,
+          focusMode: b.focus_mode || 'tech'
         })));
       }
       setIsLoading(false);
@@ -92,77 +67,52 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     fetchBoards();
   }, [user]);
 
-  const createBoard = async (name: string, color: string, template?: string, boardFocusMode?: FocusMode): Promise<Board> => {
+  const createBoard = async (name: string, template: string, color: string, description: string, focusMode: FocusMode): Promise<Board> => {
     if (!user) throw new Error('Not authenticated');
 
-    if (boards.length >= 100) {
-      toast.error('Board limit reached (100). Delete old boards to create new ones.');
-      throw new Error('Board limit reached');
-    }
-
-    const currentMode = boardFocusMode || focusMode;
-
-    const columns = template === 'kanban' 
+    const columns = template === 'kanban'
       ? [
-          { id: generateId(), title: 'To Do', cards: [] },
-          { id: generateId(), title: 'In Progress', cards: [] },
-          { id: generateId(), title: 'Done', cards: [] }
-        ]
+        { id: generateId(), title: 'To Do', cards: [] },
+        { id: generateId(), title: 'In Progress', cards: [] },
+        { id: generateId(), title: 'Done', cards: [] }
+      ]
       : [{ id: generateId(), title: 'Tasks', cards: [] }];
 
-    try {
-      const { data, error } = await supabase
-        .from('boards')
-        .insert({
-          name,
-          color,
-          columns,
-          user_id: user.id,
-          is_favorite: false,
-          focus_mode: currentMode,
-          template: template || 'default'
-        })
-        .select()
-        .single();
+    const { data, error } = await supabase
+      .from('boards')
+      .insert({
+        name,
+        color,
+        columns,
+        user_id: user.id,
+        is_favorite: false,
+        focus_mode: focusMode,
+        description: description
+      })
+      .select()
+      .single();
 
-      if (error) {
-        console.error('Create board error:', error);
-        
-        if (error.code === '42501') {
-          toast.error('Permission denied. Please check your login status.');
-        } else if (error.code === '23505') {
-          toast.error('A board with this name already exists.');
-        } else if (error.code === '23514') {
-          toast.error('Board limit reached for your account.');
-        } else if (error.code === '23502') {
-          toast.error('Missing required fields. Please try again.');
-        } else {
-          toast.error(`Failed to create board: ${error.message}`);
-        }
-        
-        throw error;
-      }
-
-      const newBoard: Board = {
-        id: data.id,
-        name: data.name,
-        color: data.color,
-        isFavorite: data.is_favorite,
-        columns: data.columns,
-        createdAt: new Date(data.created_at),
-        userId: data.user_id,
-        focusMode: data.focus_mode,
-        template: data.template
-      };
-
-      setBoards(prev => [newBoard, ...prev]);
-      toast.success('Board created successfully!');
-      return newBoard;
-      
-    } catch (error) {
-      console.error('Create board exception:', error);
+    if (error) {
+      console.error('Create board error:', error);
       throw error;
     }
+
+    const newBoard: Board = {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      color: data.color,
+      template: data.template_type || 'canvas',
+      isFavorite: data.is_favorite,
+      columns: data.columns,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.created_at),
+      ownerId: data.user_id,
+      focusMode: data.focus_mode
+    };
+
+    setBoards(prev => [newBoard, ...prev]);
+    return newBoard;
   };
 
   const updateBoard = async (id: string, updates: Partial<Board>) => {
@@ -172,15 +122,12 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
         name: updates.name,
         color: updates.color,
         is_favorite: updates.isFavorite,
-        columns: updates.columns,
-        focus_mode: updates.focusMode,
-        template: updates.template
+        columns: updates.columns
       })
       .eq('id', id);
 
     if (error) {
       console.error('Update board error:', error);
-      toast.error('Failed to update board');
       throw error;
     }
 
@@ -195,12 +142,10 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
 
     if (error) {
       console.error('Delete board error:', error);
-      toast.error('Failed to delete board');
       throw error;
     }
 
     setBoards(prev => prev.filter(b => b.id !== id));
-    toast.success('Board deleted');
   };
 
   const toggleFavorite = async (id: string) => {
@@ -208,7 +153,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     if (!board) return;
 
     const newValue = !board.isFavorite;
-    
+
     const { error } = await supabase
       .from('boards')
       .update({ is_favorite: newValue })
@@ -216,7 +161,6 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
 
     if (error) {
       console.error('Toggle favorite error:', error);
-      toast.error('Failed to update favorite');
       throw error;
     }
 
@@ -227,7 +171,13 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     const board = boards.find(b => b.id === boardId);
     if (!board) return;
 
-    const newColumn = { id: generateId(), title, cards: [] };
+    const newColumn: Column = {
+      id: generateId(),
+      name: title,
+      boardId,
+      order: board.columns.length,
+      cards: []
+    };
     const updatedColumns = [...board.columns, newColumn];
 
     await updateBoard(boardId, { columns: updatedColumns });
@@ -237,8 +187,8 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     const board = boards.find(b => b.id === boardId);
     if (!board) return;
 
-    const updatedColumns = board.columns.map(c => 
-      c.id === columnId ? { ...c, title } : c
+    const updatedColumns = board.columns.map(c =>
+      c.id === columnId ? { ...c, name: title } : c
     );
 
     await updateBoard(boardId, { columns: updatedColumns });
@@ -253,12 +203,20 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     await updateBoard(boardId, { columns: updatedColumns });
   };
 
-  const addCard = async (boardId: string, columnId: string, card: Omit<Card, 'id'>) => {
+  const addCard = async (boardId: string, columnId: string, card: Omit<Card, 'id' | 'columnId' | 'order' | 'labels' | 'createdAt' | 'updatedAt'>) => {
     const board = boards.find(b => b.id === boardId);
     if (!board) return;
 
-    const newCard = { ...card, id: generateId() };
-    const updatedColumns = board.columns.map(c => 
+    const newCard: Card = {
+      ...card,
+      id: generateId(),
+      columnId,
+      order: (board.columns.find(c => c.id === columnId)?.cards.length || 0),
+      labels: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    const updatedColumns = board.columns.map(c =>
       c.id === columnId ? { ...c, cards: [...c.cards, newCard] } : c
     );
 
@@ -273,9 +231,11 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     const card = fromCol?.cards.find(c => c.id === cardId);
     if (!card) return;
 
+    const newCard: Card = { ...card, columnId: toColumnId };
+
     const updatedColumns = board.columns.map(c => {
       if (c.id === fromColumnId) return { ...c, cards: c.cards.filter(card => card.id !== cardId) };
-      if (c.id === toColumnId) return { ...c, cards: [...c.cards, card] };
+      if (c.id === toColumnId) return { ...c, cards: [...c.cards, newCard] };
       return c;
     });
 
@@ -283,20 +243,18 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <BoardContext.Provider value={{ 
-      boards, 
-      createBoard, 
-      updateBoard, 
-      deleteBoard, 
+    <BoardContext.Provider value={{
+      boards,
+      createBoard,
+      updateBoard,
+      deleteBoard,
       toggleFavorite,
       addCard,
       moveCard,
       addColumn,
       updateColumn,
       deleteColumn,
-      isLoading,
-      focusMode,
-      setFocusMode
+      isLoading
     }}>
       {children}
     </BoardContext.Provider>

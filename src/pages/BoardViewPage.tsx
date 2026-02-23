@@ -220,8 +220,8 @@ export default function BoardViewPage() {
       onBlur: () => setEditingCell(null),
       onFocus: () => setEditingCell({ rowId, colId }),
       className: cn(
-        "border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent",
-        settings.compact_mode ? "h-7 text-xs" : "h-9 text-sm"
+        "border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent flex items-center",
+        settings.compact_mode ? "h-6 text-[11px] px-1" : "h-9 text-sm px-3"
       ),
     };
 
@@ -328,7 +328,7 @@ export default function BoardViewPage() {
         "border-b backdrop-blur-md sticky top-0 z-20 transition-colors",
         colorConfig.border,
         colorConfig.light,
-        settings.compact_mode ? "p-2 md:p-3" : "p-4 md:p-6"
+        settings.compact_mode ? "p-1.5 md:p-2" : "p-4 md:p-6"
       )}>
         <div className="flex items-center gap-4">
           <Button
@@ -422,7 +422,7 @@ export default function BoardViewPage() {
                   >
                     <div className={cn(
                       "flex items-center justify-between px-3 group",
-                      settings.compact_mode ? "py-1.5" : "py-3"
+                      settings.compact_mode ? "py-1" : "py-3"
                     )}>
                       {isEditing ? (
                         <div className="flex items-center gap-1 flex-1">
@@ -478,16 +478,16 @@ export default function BoardViewPage() {
 
             <div className={cn(
               "w-48 shrink-0 px-3",
-              settings.compact_mode ? "py-1.5" : "py-3"
+              settings.compact_mode ? "py-1" : "py-3"
             )}>
               <form onSubmit={handleAddColumn} className="flex gap-2">
                 <Input
-                  placeholder="New column..."
+                  placeholder="New..."
                   value={newColumnName}
                   onChange={(e) => setNewColumnName(e.target.value)}
                   className={cn(
                     "bg-background/30 border-transparent focus:border-primary/30",
-                    settings.compact_mode ? "h-7 text-xs" : "h-8 text-sm"
+                    settings.compact_mode ? "h-6 text-[11px]" : "h-8 text-sm"
                   )}
                 />
               </form>
@@ -537,7 +537,7 @@ export default function BoardViewPage() {
               )}
             >
               <Plus className={cn(settings.compact_mode ? "h-3.5 w-3.5" : "h-4 w-4")} />
-              Add new row
+              Add
             </button>
           </div>
         </div>

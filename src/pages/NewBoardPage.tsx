@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Layout, Zap, Grid3X3, Compass, Calendar, Lightbulb, Check, ArrowRight } from 'lucide-react';
 import { useBoards } from '@/contexts/BoardContext';
+import { useFocus } from '@/contexts/FocusContext';
 import { BOARD_TEMPLATES, BOARD_COLORS } from '@/lib/board-templates';
 import type { BoardTemplate, BoardColor } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,7 @@ const templateIcons: Record<string, React.ElementType> = {
 export default function NewBoardPage() {
   const navigate = useNavigate();
   const { createBoard } = useBoards();
-  
+
   const [step, setStep] = useState<'template' | 'customize'>('template');
   const [selectedTemplate, setSelectedTemplate] = useState<BoardTemplate>('canvas');
   const [selectedColor, setSelectedColor] = useState<BoardColor>('coral');
@@ -39,13 +40,20 @@ export default function NewBoardPage() {
     setStep('customize');
   };
 
+  const { focusMode } = useFocus();
   const [isCreating, setIsCreating] = useState(false);
 
   const handleCreate = async () => {
     if (!boardName.trim() || isCreating) return;
     setIsCreating(true);
     try {
-      const newBoard = await createBoard(boardName.trim(), selectedTemplate, selectedColor, boardDescription);
+      const newBoard = await createBoard(
+        boardName.trim(),
+        selectedTemplate,
+        selectedColor,
+        boardDescription,
+        focusMode
+      );
       if (newBoard) {
         navigate(`/boards/${newBoard.id}`);
       } else {
@@ -66,8 +74,8 @@ export default function NewBoardPage() {
           Create New Board
         </h1>
         <p className="text-muted-foreground">
-          {step === 'template' 
-            ? 'Choose a template to get started' 
+          {step === 'template'
+            ? 'Choose a template to get started'
             : 'Customize your board'}
         </p>
       </div>
@@ -107,8 +115,8 @@ export default function NewBoardPage() {
                 className={cn(
                   "text-left p-5 rounded-xl border-2 transition-all duration-200",
                   "hover:border-primary hover:shadow-lg hover:scale-[1.02]",
-                  selectedTemplate === template.id 
-                    ? "border-primary bg-primary/5" 
+                  selectedTemplate === template.id
+                    ? "border-primary bg-primary/5"
                     : "border-border bg-card"
                 )}
               >
@@ -125,7 +133,7 @@ export default function NewBoardPage() {
                     </p>
                     <div className="flex flex-wrap gap-1 mt-3">
                       {template.features.slice(0, 2).map(feature => (
-                        <span 
+                        <span
                           key={feature}
                           className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground"
                         >
@@ -181,8 +189,8 @@ export default function NewBoardPage() {
                     className={cn(
                       "aspect-square rounded-xl transition-all duration-200 relative",
                       color.class,
-                      selectedColor === color.id 
-                        ? "ring-4 ring-primary ring-offset-2 ring-offset-background scale-105" 
+                      selectedColor === color.id
+                        ? "ring-4 ring-primary ring-offset-2 ring-offset-background scale-105"
                         : "hover:scale-105"
                     )}
                   >
@@ -198,13 +206,13 @@ export default function NewBoardPage() {
 
           {/* Preview & Actions */}
           <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setStep('template')}
             >
               Back to Templates
             </Button>
-            <Button 
+            <Button
               onClick={handleCreate}
               disabled={!boardName.trim() || isCreating}
               className="gradient-primary text-primary-foreground w-full sm:w-auto"

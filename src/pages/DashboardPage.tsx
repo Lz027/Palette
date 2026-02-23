@@ -4,11 +4,13 @@ import { Plus, ArrowRight } from 'lucide-react';
 import { useBoards } from '@/contexts/BoardContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFocus } from '@/contexts/FocusContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { FocusMode } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { BoardCard } from '@/components/boards/BoardCard';
 import { FocusToolsPanel } from '@/components/features/FocusToolsPanel';
+import { QuickCapture } from '@/components/features/QuickCapture';
 import { CodeSnippets } from '@/components/features/CodeSnippets';
 import { NoteTaker } from '@/components/features/NoteTaker';
 import { ImageEditor } from '@/components/features/ImageEditor';
@@ -21,10 +23,18 @@ export default function DashboardPage() {
   const { boards } = useBoards();
   const { user } = useAuth();
   const { colors, focusMode } = useFocus();
+  const { settings, profile } = useSettings();
   const isMobile = useIsMobile();
 
   const favoriteBoards = boards.filter(b => b.isFavorite && b.focusMode === focusMode);
   const recentBoards = boards.filter(b => b.focusMode === focusMode).slice(-4).reverse();
+
+  const getDisplayName = () => {
+    if (profile.display_name) return profile.display_name.split(' ')[0];
+    if (user?.name) return user.name.split(' ')[0];
+    if (user?.email) return user.email.split('@')[0];
+    return 'there';
+  };
 
   const greeting = () => {
     const hour = new Date().getHours();
@@ -48,7 +58,7 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="font-display text-lg sm:text-2xl md:text-3xl font-bold">
-              {greeting()}, {user?.name?.split(' ')[0] || 'there'}
+              {greeting()}, {getDisplayName()}
             </h1>
             <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">
               Here's what's happening with your projects
@@ -73,6 +83,13 @@ export default function DashboardPage() {
           <FocusToolsPanel compact={isMobile} />
           {renderSpecialTool()}
         </div>
+      )}
+
+      {/* Quick Capture Component */}
+      {settings.quick_capture && (
+        <section className="animate-in fade-in slide-in-from-top-4 duration-500">
+          <QuickCapture />
+        </section>
       )}
 
       {/* Recent Boards */}

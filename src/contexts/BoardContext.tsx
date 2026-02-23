@@ -60,7 +60,8 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
           createdAt: new Date(b.created_at),
           updatedAt: new Date(b.created_at), // Use created_at if updated_at is null
           ownerId: b.user_id,
-          focusMode: b.focus_mode || 'tech'
+          focusMode: b.focus_mode || 'tech',
+          data: b.data || null
         })));
       }
       setIsLoading(false);
@@ -111,7 +112,8 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.created_at),
       ownerId: data.user_id,
-      focusMode: data.focus_mode
+      focusMode: data.focus_mode,
+      data: data.data || null
     };
 
     setBoards(prev => [newBoard, ...prev]);
@@ -125,7 +127,8 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
         name: updates.name,
         color: updates.color,
         is_favorite: updates.isFavorite,
-        columns: updates.columns
+        columns: updates.columns,
+        data: updates.data
       })
       .eq('id', id);
 
@@ -209,6 +212,32 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
   const addCard = async (boardId: string, columnId: string, card: Omit<Card, 'id' | 'columnId' | 'order' | 'labels' | 'createdAt' | 'updatedAt'>) => {
     const board = boards.find(b => b.id === boardId);
     if (!board) return;
+
+    // Bridge for Spreadsheet/Canvas boards
+    if (String(board.template) !== 'kanban') {
+      const currentData = board.data || { rows: [] };
+      const rows = currentData.rows || [];
+
+      // Determine the column key to put the card title in
+      // Usually it's the first column for Quick Capture
+      const firstColId = board.columns[0]?.id || '1';
+
+      const newRow = {
+        id: generateId(),
+        cells: {
+          [firstColId]: card.title
+        }
+      };
+
+      const updatedData = {
+        ...currentData,
+        rows: [...rows, newRow]
+      };
+
+      await updateBoard(boardId, { data: updatedData });
+      toast.success('Added to spreadsheet');
+      return;
+    }
 
     const newCard: Card = {
       ...card,

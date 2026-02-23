@@ -18,7 +18,7 @@ export function QuickCapture() {
   const [cardTitle, setCardTitle] = useState('');
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
   const [selectedColumnId, setSelectedColumnId] = useState<string>('');
-  
+
   const { boards, addCard } = useBoards();
 
   const selectedBoard = boards.find(b => b.id === selectedBoardId);
@@ -26,8 +26,8 @@ export function QuickCapture() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!cardTitle.trim() || !selectedBoardId || !selectedColumnId) return;
-    
-    addCard(selectedBoardId, selectedColumnId, cardTitle.trim());
+
+    addCard(selectedBoardId, selectedColumnId, { title: cardTitle.trim() });
     setCardTitle('');
     setIsOpen(false);
   };
@@ -58,10 +58,10 @@ export function QuickCapture() {
               <Zap className="h-5 w-5" />
               <span className="font-medium">Quick Capture</span>
             </div>
-            <Button 
-              type="button" 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               className="h-8 w-8"
               onClick={() => setIsOpen(false)}
             >
@@ -94,8 +94,8 @@ export function QuickCapture() {
               </SelectContent>
             </Select>
 
-            <Select 
-              value={selectedColumnId} 
+            <Select
+              value={selectedColumnId}
               onValueChange={setSelectedColumnId}
               disabled={!selectedBoardId}
             >
@@ -111,8 +111,8 @@ export function QuickCapture() {
               </SelectContent>
             </Select>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="gradient-primary text-primary-foreground"
               disabled={!cardTitle.trim() || !selectedBoardId || !selectedColumnId}
             >

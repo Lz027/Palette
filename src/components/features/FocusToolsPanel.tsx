@@ -1,5 +1,6 @@
 import React from 'react';
-import { useFocus, FocusMode } from '@/contexts/FocusContext';
+import { useFocus } from '@/contexts/FocusContext';
+import { FocusMode } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ExternalLink, Code, Palette, Briefcase } from 'lucide-react';

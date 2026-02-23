@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { Board, Column, Card, FocusMode } from '@/types';
+import { toast } from 'sonner';
 
 
 interface BoardContextType {
@@ -10,8 +11,9 @@ interface BoardContextType {
   updateBoard: (id: string, updates: Partial<Board>) => Promise<void>;
   deleteBoard: (id: string) => Promise<void>;
   toggleFavorite: (id: string) => Promise<void>;
-  addCard: (boardId: string, columnId: string, card: Omit<Card, 'id'>) => Promise<void>;
+  addCard: (boardId: string, columnId: string, card: Omit<Card, 'id' | 'columnId' | 'order' | 'labels' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   moveCard: (boardId: string, fromColumnId: string, toColumnId: string, cardId: string) => Promise<void>;
+  clearAllData: () => Promise<void>;
   addColumn: (boardId: string, title: string) => Promise<void>;
   updateColumn: (boardId: string, columnId: string, title: string) => Promise<void>;
   deleteColumn: (boardId: string, columnId: string) => Promise<void>;
@@ -243,6 +245,24 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     await updateBoard(boardId, { columns: updatedColumns });
   };
 
+  const clearAllData = async () => {
+    if (!user) return;
+
+    // Delete all boards for the user
+    const { error } = await supabase
+      .from('boards')
+      .delete()
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Clear data error:', error);
+      throw error;
+    }
+
+    setBoards([]);
+    toast.success('All data cleared successfully');
+  };
+
   return (
     <BoardContext.Provider value={{
       boards,
@@ -255,6 +275,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       addColumn,
       updateColumn,
       deleteColumn,
+      clearAllData,
       isLoading
     }}>
       {children}

@@ -140,7 +140,12 @@
     font-family: 'Inter', system-ui, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Space Grotesk', system-ui, sans-serif;
   }
 }
@@ -149,7 +154,7 @@
   .gradient-primary {
     background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
   }
-  
+
   .gradient-accent {
     background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--info)) 100%);
   }
@@ -167,7 +172,7 @@
   .safe-area-pb {
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
-  
+
   .safe-area-pt {
     padding-top: env(safe-area-inset-top, 0);
   }
@@ -176,5 +181,40 @@
   .touch-manipulation {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Custom Animations for Focus Wheel */
+  @keyframes color-burst {
+    0% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+
+    100% {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+
+  .animate-color-burst {
+    animation: color-burst 0.6s ease-out forwards;
+  }
+
+  @keyframes slow-pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    50% {
+      opacity: 0.7;
+      transform: scale(1.1);
+    }
+  }
+
+  .animate-slow-pulse {
+    animation: slow-pulse 3s ease-in-out infinite;
   }
 }

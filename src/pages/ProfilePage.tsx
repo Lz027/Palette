@@ -295,7 +295,7 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
-
+      
       {/* Log Out */}
       <Card className="glass-card">
         <CardContent className="p-4">

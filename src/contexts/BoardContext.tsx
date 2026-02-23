@@ -70,13 +70,13 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
   const createBoard = async (name: string, template: string, color: string, description: string, focusMode: FocusMode): Promise<Board> => {
     if (!user) throw new Error('Not authenticated');
 
-    const columns = template === 'kanban'
+    const columns: Column[] = template === 'kanban'
       ? [
-        { id: generateId(), title: 'To Do', cards: [] },
-        { id: generateId(), title: 'In Progress', cards: [] },
-        { id: generateId(), title: 'Done', cards: [] }
+        { id: generateId(), name: 'To Do', boardId: '', order: 0, cards: [] },
+        { id: generateId(), name: 'In Progress', boardId: '', order: 1, cards: [] },
+        { id: generateId(), name: 'Done', boardId: '', order: 2, cards: [] }
       ]
-      : [{ id: generateId(), title: 'Tasks', cards: [] }];
+      : [{ id: generateId(), name: 'Tasks', boardId: '', order: 0, cards: [] }];
 
     const { data, error } = await supabase
       .from('boards')
@@ -87,7 +87,8 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
         user_id: user.id,
         is_favorite: false,
         focus_mode: focusMode,
-        description: description
+        description: description,
+        template_type: template
       })
       .select()
       .single();

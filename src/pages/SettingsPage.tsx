@@ -9,14 +9,16 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Sun, Moon, Monitor, Palette, Bell, Zap, Clock, User, Mail, Shield } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import paletteLogo from '@/assets/palette-logo.jpeg';
+import { Sun, Moon, Monitor, Palette, Bell, Zap, Clock, User, Mail, Shield, Trash2, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useBoards } from '@/contexts/BoardContext';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
   const { settings, updateSettings, isLoading } = useSettings();
+  const { clearAllData } = useBoards();
 
   const [localSettings, setLocalSettings] = useState(settings);
 
@@ -173,7 +175,7 @@ export default function SettingsPage() {
             <div className="space-y-1">
               <Label htmlFor="compact" className="font-medium">Compact Mode</Label>
               <p className="text-sm text-muted-foreground">
-                Show more content with less spacing
+                Denser layout with reduced padding and spacing
               </p>
             </div>
             <Switch
@@ -206,6 +208,44 @@ export default function SettingsPage() {
 
           <Button onClick={handleSaveSettings} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
             Save Preferences
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Data Management Section */}
+      <Card className="border-destructive/20 bg-destructive/5">
+        <CardHeader>
+          <CardTitle className="font-display text-lg flex items-center gap-2 text-destructive">
+            <Trash2 className="h-5 w-5" />
+            Data Management
+          </CardTitle>
+          <CardDescription>Permanently clear all your workspace data</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+            <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-destructive">Danger Zone</p>
+              <p className="text-xs text-destructive/80">
+                This will delete ALL boards, columns, and cards. This action cannot be undone.
+              </p>
+            </div>
+          </div>
+
+          <Button
+            variant="destructive"
+            className="w-full sm:w-auto"
+            onClick={async () => {
+              if (confirm("Are you ABSOLUTELY sure? This will delete all your boards, columns, and cards forever.")) {
+                try {
+                  await clearAllData();
+                } catch (error) {
+                  console.error("Failed to clear data:", error);
+                }
+              }
+            }}
+          >
+            Delete All Workspace Data
           </Button>
         </CardContent>
       </Card>

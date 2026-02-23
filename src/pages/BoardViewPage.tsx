@@ -28,12 +28,22 @@ const columnTypeConfig: Record<ExtendedColumnType, { icon: React.ElementType; la
   'status': { icon: CheckSquare, label: 'Status' },
 };
 
+const boardColorConfigs: Record<string, { bg: string; text: string; light: string; border: string; gradient: string }> = {
+  coral: { bg: 'bg-board-coral', text: 'text-board-coral', light: 'bg-board-coral/10', border: 'border-board-coral/20', gradient: 'from-board-coral/20 to-board-peach/10' },
+  lavender: { bg: 'bg-board-lavender', text: 'text-board-lavender', light: 'bg-board-lavender/10', border: 'border-board-lavender/20', gradient: 'from-board-lavender/20 to-board-rose/10' },
+  mint: { bg: 'bg-board-mint', text: 'text-board-mint', light: 'bg-board-mint/10', border: 'border-board-mint/20', gradient: 'from-board-mint/20 to-board-sky/10' },
+  sky: { bg: 'bg-board-sky', text: 'text-board-sky', light: 'bg-board-sky/10', border: 'border-board-sky/20', gradient: 'from-board-sky/20 to-board-lavender/10' },
+  peach: { bg: 'bg-board-peach', text: 'text-board-peach', light: 'bg-board-peach/10', border: 'border-board-peach/20', gradient: 'from-board-peach/20 to-board-coral/10' },
+  rose: { bg: 'bg-board-rose', text: 'text-board-rose', light: 'bg-board-rose/10', border: 'border-board-rose/20', gradient: 'from-board-rose/20 to-board-lavender/10' },
+};
+
 export default function BoardViewPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const { boards, toggleFavorite, addColumn, deleteColumn, updateColumn, updateBoard } = useBoards();
   const { focusMode, getColumnTypes } = useFocus();
-  
+
   const board = boards.find(b => b.id === boardId);
+  const colorConfig = board ? boardColorConfigs[board.color] || boardColorConfigs.coral : boardColorConfigs.coral;
 
   const [newColumnName, setNewColumnName] = useState('');
   const [rows, setRows] = useState<{ id: string; cells: Record<string, string> }[]>([
@@ -83,8 +93,8 @@ export default function BoardViewPage() {
   };
 
   const handleCellChange = (rowId: string, colId: string, value: string) => {
-    setRows(rows.map(row => 
-      row.id === rowId 
+    setRows(rows.map(row =>
+      row.id === rowId
         ? { ...row, cells: { ...row.cells, [colId]: value } }
         : row
     ));
@@ -126,7 +136,7 @@ export default function BoardViewPage() {
     try {
       const fileExt = file.name.split('.').pop();
       const filePath = `${boardId}/${colId}/${rowId}/${Date.now()}.${fileExt}`;
-      
+
       const { error: uploadError } = await supabase.storage
         .from('board-files')
         .upload(filePath, file);
@@ -182,9 +192,9 @@ export default function BoardViewPage() {
         return <Input {...inputProps} type="date" />;
       case 'link':
         return (
-          <Input 
-            {...inputProps} 
-            type="url" 
+          <Input
+            {...inputProps}
+            type="url"
             placeholder="https://"
             className={cn(inputProps.className, value && "text-primary underline")}
           />
@@ -195,8 +205,8 @@ export default function BoardViewPage() {
         let fileData: { name: string; url: string } | null = null;
         try {
           if (value) fileData = JSON.parse(value);
-        } catch {}
-        
+        } catch { }
+
         return (
           <div className="flex items-center gap-1.5 px-2 h-9">
             {isUploading ? (
@@ -233,8 +243,8 @@ export default function BoardViewPage() {
               <Button variant="ghost" className="h-9 w-full justify-start px-3 text-sm font-normal">
                 {selectedStatus ? (
                   <span className="flex items-center gap-2">
-                    <span 
-                      className="w-2.5 h-2.5 rounded-full" 
+                    <span
+                      className="w-2.5 h-2.5 rounded-full"
                       style={{ backgroundColor: `hsl(${selectedStatus.color})` }}
                     />
                     {selectedStatus.name}
@@ -244,13 +254,13 @@ export default function BoardViewPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
               {defaultStatuses.map(status => (
-                <DropdownMenuItem 
-                  key={status.id} 
+                <DropdownMenuItem
+                  key={status.id}
                   onClick={() => handleCellChange(rowId, colId, status.id)}
                   className={cn(value === status.id && "bg-accent")}
                 >
-                  <span 
-                    className="w-2.5 h-2.5 rounded-full mr-2" 
+                  <span
+                    className="w-2.5 h-2.5 rounded-full mr-2"
                     style={{ backgroundColor: `hsl(${status.color})` }}
                   />
                   {status.name}
@@ -265,7 +275,7 @@ export default function BoardViewPage() {
   };
 
   return (
-    <div className="h-full flex flex-col -m-3 md:-m-6">
+    <div className={cn("h-full flex flex-col -m-3 md:-m-6 bg-gradient-to-br transition-colors duration-500", colorConfig.gradient)}>
       <input
         ref={fileInputRef}
         type="file"
@@ -273,26 +283,27 @@ export default function BoardViewPage() {
         onChange={onFileInputChange}
         accept="*/*"
       />
-      
-      <div className="p-4 md:p-6 border-b border-border bg-card">
+
+      <div className={cn("p-4 md:p-6 border-b backdrop-blur-md sticky top-0 z-20 transition-colors", colorConfig.border, colorConfig.light)}>
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             asChild
+            className="hover:bg-background/20"
           >
             <Link to="/boards">
               <ArrowLeft className="h-5 w-5" />
             </Link>
           </Button>
-          
+
           <div className="flex-1 min-w-0">
             {isEditingBoardName ? (
               <div className="flex items-center gap-2">
                 <Input
                   value={boardNameEdit}
                   onChange={(e) => setBoardNameEdit(e.target.value)}
-                  className="font-display text-xl md:text-2xl font-bold h-auto py-1"
+                  className="font-display text-xl md:text-2xl font-bold h-auto py-1 bg-background/50 border-primary/20"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') saveBoardName();
@@ -307,17 +318,17 @@ export default function BoardViewPage() {
                 </Button>
               </div>
             ) : (
-              <h1 
-                className="font-display text-xl md:text-2xl font-bold text-foreground cursor-pointer hover:text-primary transition-colors"
+              <h1
+                className={cn("font-display text-xl md:text-2xl font-bold cursor-pointer hover:opacity-80 transition-all", colorConfig.text)}
                 onClick={startEditingBoardName}
                 title="Click to edit board name"
               >
                 {board.name}
               </h1>
             )}
-            
+
             {board.description && !isEditingBoardName && (
-              <p className="text-sm text-muted-foreground truncate">{board.description}</p>
+              <p className="text-sm text-muted-foreground/80 truncate">{board.description}</p>
             )}
           </div>
 
@@ -326,7 +337,8 @@ export default function BoardViewPage() {
             size="icon"
             onClick={() => toggleFavorite(board.id)}
             className={cn(
-              board.isFavorite ? "text-warning" : "text-muted-foreground"
+              "transition-colors",
+              board.isFavorite ? "text-warning fill-warning" : "text-muted-foreground hover:text-foreground"
             )}
           >
             <Star className={cn("h-5 w-5", board.isFavorite && "fill-current")} />
@@ -335,56 +347,49 @@ export default function BoardViewPage() {
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="min-w-max">
-          <div className="flex border-b border-border bg-muted/30 sticky top-0 z-10">
-            <div className="w-12 shrink-0 px-2 py-2 border-r border-border flex items-center justify-center">
-              <span className="text-xs text-muted-foreground">#</span>
+        <div className="min-w-max p-4 md:p-6">
+          <div className={cn("flex border-b sticky top-0 z-10 backdrop-blur-sm rounded-t-xl overflow-hidden", colorConfig.border, "bg-background/40")}>
+            <div className={cn("w-12 shrink-0 px-2 py-3 border-r flex items-center justify-center", colorConfig.border)}>
+              <span className="text-xs text-muted-foreground font-medium">#</span>
             </div>
-            
+
             {board.columns && board.columns.length > 0 ? (
               board.columns.map((column) => {
                 const type = getColumnType(column.id);
                 const TypeIcon = columnTypeConfig[type]?.icon || Type;
                 const isEditing = editingColumnId === column.id;
-                
+
                 return (
-                  <div 
+                  <div
                     key={column.id}
-                    className="w-48 shrink-0 border-r border-border"
+                    className={cn("w-48 shrink-0 border-r", colorConfig.border)}
                   >
-                    <div className="flex items-center justify-between px-3 py-2 group">
+                    <div className="flex items-center justify-between px-3 py-3 group">
                       {isEditing ? (
                         <div className="flex items-center gap-1 flex-1">
                           <Input
                             value={editingColumnName}
                             onChange={(e) => setEditingColumnName(e.target.value)}
-                            className="h-6 text-sm px-1"
+                            className="h-7 text-sm px-2 bg-background/50"
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') saveColumnName(column.id);
                               if (e.key === 'Escape') cancelEditingColumn();
                             }}
                           />
-                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => saveColumnName(column.id)}>
-                            <Check className="h-3 w-3 text-success" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={cancelEditingColumn}>
-                            <X className="h-3 w-3 text-destructive" />
-                          </Button>
                         </div>
                       ) : (
-                        <span 
-                          className="font-medium text-sm truncate cursor-pointer hover:text-primary"
-                          onClick={() => startEditingColumn(column.id, column.title || column.name || 'Untitled')}
-                          title="Click to edit"
+                        <span
+                          className="font-semibold text-sm truncate cursor-pointer hover:opacity-70 transition-opacity"
+                          onClick={() => startEditingColumn(column.id, column.name || 'Untitled')}
                         >
-                          {column.title || column.name || 'Untitled'}
+                          {column.name || 'Untitled'}
                         </span>
                       )}
                       <div className="flex items-center gap-1">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-60 hover:opacity-100">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 opacity-40 hover:opacity-100">
                               <TypeIcon className="h-3.5 w-3.5" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -393,7 +398,7 @@ export default function BoardViewPage() {
                               const config = columnTypeConfig[typeKey as ExtendedColumnType];
                               if (!config) return null;
                               return (
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                   key={typeKey}
                                   onClick={() => handleColumnTypeChange(column.id, typeKey as ExtendedColumnType)}
                                   className={cn(type === typeKey && "bg-accent")}
@@ -405,76 +410,59 @@ export default function BoardViewPage() {
                             })}
                           </DropdownMenuContent>
                         </DropdownMenu>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-60 hover:opacity-100"
-                          onClick={() => deleteColumn(board.id, column.id)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                        </Button>
                       </div>
                     </div>
                   </div>
                 );
               })
-            ) : (
-              <div className="w-48 shrink-0 px-3 py-2 text-muted-foreground text-sm">
-                No columns yet. Add one →
-              </div>
-            )}
+            ) : null}
 
-            <div className="w-48 shrink-0 px-2 py-2">
-              <form onSubmit={handleAddColumn} className="flex gap-1">
+            <div className="w-48 shrink-0 px-3 py-3">
+              <form onSubmit={handleAddColumn} className="flex gap-2">
                 <Input
                   placeholder="New column..."
                   value={newColumnName}
                   onChange={(e) => setNewColumnName(e.target.value)}
-                  className="h-7 text-sm"
+                  className="h-8 text-sm bg-background/30 border-transparent focus:border-primary/30"
                 />
-                {newColumnName && (
-                  <Button type="submit" size="icon" className="h-7 w-7 shrink-0">
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
-                )}
               </form>
             </div>
           </div>
 
-          {rows.map((row, rowIndex) => (
-            <div key={row.id} className="flex border-b border-border hover:bg-muted/20 group">
-              <div className="w-12 shrink-0 px-2 py-1 border-r border-border flex items-center justify-center relative">
-                <span className="text-xs text-muted-foreground group-hover:opacity-0">{rowIndex + 1}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 absolute opacity-0 group-hover:opacity-100"
-                  onClick={() => handleDeleteRow(row.id)}
-                >
-                  <Trash2 className="h-3 w-3 text-destructive" />
-                </Button>
-              </div>
-              
-              {board.columns && board.columns.map((column) => (
-                <div 
-                  key={column.id}
-                  className="w-48 shrink-0 border-r border-border"
-                >
-                  {renderCellInput(row.id, column.id, getColumnType(column.id))}
+          <div className={cn("bg-background/20 rounded-b-xl border border-t-0 overflow-hidden shadow-sm", colorConfig.border)}>
+            {rows.map((row, rowIndex) => (
+              <div key={row.id} className={cn("flex border-b hover:bg-background/30 transition-colors group last:border-0", colorConfig.border)}>
+                <div className={cn("w-12 shrink-0 px-2 py-1 border-r flex items-center justify-center relative", colorConfig.border)}>
+                  <span className="text-xs text-muted-foreground/60 group-hover:opacity-0">{rowIndex + 1}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 absolute opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => handleDeleteRow(row.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-destructive/70 hover:text-destructive" />
+                  </Button>
                 </div>
-              ))}
 
-              <div className="w-48 shrink-0" />
-            </div>
-          ))}
+                {board.columns && board.columns.map((column) => (
+                  <div
+                    key={column.id}
+                    className={cn("w-48 shrink-0 border-r last:border-0", colorConfig.border)}
+                  >
+                    {renderCellInput(row.id, column.id, getColumnType(column.id))}
+                  </div>
+                ))}
 
-          <div className="flex border-b border-border">
+                <div className="w-48 shrink-0" />
+              </div>
+            ))}
+
             <button
               onClick={handleAddRow}
-              className="w-full px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors flex items-center gap-2"
+              className="w-full px-5 py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-background/40 transition-all flex items-center gap-2 font-medium"
             >
               <Plus className="h-4 w-4" />
-              Add row
+              Add new row
             </button>
           </div>
         </div>

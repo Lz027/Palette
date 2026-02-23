@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 
 export function QuickCapture() {
   const [isOpen, setIsOpen] = useState(false);
-  const [cardTitle, setCardTitle] = useState('');
+  const [taskTitle, setTaskTitle] = useState('');
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
   const [selectedColumnId, setSelectedColumnId] = useState<string>('');
 
@@ -25,10 +25,10 @@ export function QuickCapture() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cardTitle.trim() || !selectedBoardId || !selectedColumnId) return;
+    if (!taskTitle.trim() || !selectedBoardId || !selectedColumnId) return;
 
-    addCard(selectedBoardId, selectedColumnId, { title: cardTitle.trim() });
-    setCardTitle('');
+    addCard(selectedBoardId, selectedColumnId, { title: taskTitle.trim() });
+    setTaskTitle('');
     setIsOpen(false);
   };
 
@@ -44,7 +44,7 @@ export function QuickCapture() {
       >
         <Zap className="h-5 w-5" />
         <span className="font-medium">Quick Capture</span>
-        <span className="text-xs opacity-70">— Add a card instantly</span>
+        <span className="text-xs opacity-70">— Add an entry instantly</span>
       </button>
     );
   }
@@ -71,8 +71,8 @@ export function QuickCapture() {
 
           <Input
             placeholder="What's on your mind?"
-            value={cardTitle}
-            onChange={(e) => setCardTitle(e.target.value)}
+            value={taskTitle}
+            onChange={(e) => setTaskTitle(e.target.value)}
             className="text-lg"
             autoFocus
           />
@@ -114,7 +114,7 @@ export function QuickCapture() {
             <Button
               type="submit"
               className="gradient-primary text-primary-foreground"
-              disabled={!cardTitle.trim() || !selectedBoardId || !selectedColumnId}
+              disabled={!taskTitle.trim() || !selectedBoardId || !selectedColumnId}
             >
               <Plus className="h-4 w-4 mr-2" />
               Add

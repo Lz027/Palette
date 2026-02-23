@@ -1,13 +1,14 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBoards } from '@/contexts/BoardContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { LogOut, Camera, Pencil, X, Save, Loader2, ImagePlus } from 'lucide-react';
+import { LogOut, Camera, FolderKanban, Calendar, Loader2, Save, ImagePlus, Pencil, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { displayNameSchema, bioSchema, validateInput, INPUT_LIMITS } from '@/lib/validation';
@@ -16,54 +17,44 @@ import { supabase } from '@/integrations/supabase/client';
 export default function ProfilePage() {
   const { user, logout, uploadAvatar } = useAuth();
   const { boards } = useBoards();
+  const { profile, updateProfile, isLoading: isContextLoading } = useSettings();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isBannerUploading, setIsBannerUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [displayName, setDisplayName] = useState('');
-  const [bio, setBio] = useState('');
+  const [displayName, setDisplayName] = useState(profile.display_name || '');
+  const [bio, setBio] = useState(profile.bio || '');
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
-  const [avatarKey, setAvatarKey] = useState(0);
-
-  const loadProfileData = async () => {
-    if (!user) return;
-
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('display_name, bio, avatar_url')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (profile) {
-        setDisplayName((profile.display_name || user.name || '').slice(0, INPUT_LIMITS.DISPLAY_NAME));
-        setBio((profile.bio || '').slice(0, INPUT_LIMITS.BIO));
-      } else {
-        setDisplayName((user.name || '').slice(0, INPUT_LIMITS.DISPLAY_NAME));
-        setBio('');
-      }
-
-      const { data: bannerFiles } = await supabase.storage
-        .from('banners')
-        .list(user.id, { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
-
-      if (bannerFiles && bannerFiles.length > 0) {
-        const { data: { publicUrl } } = supabase.storage
-          .from('banners')
-          .getPublicUrl(`${user.id}/${bannerFiles[0].name}`);
-        setBannerUrl(`${publicUrl}?t=${Date.now()}`);
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    }
-  };
 
   useEffect(() => {
-    loadProfileData();
+    if (profile) {
+      setDisplayName(profile.display_name || '');
+      setBio(profile.bio || '');
+    }
+  }, [profile]);
+
+  // Load banner
+  useEffect(() => {
+    const loadBanner = async () => {
+      if (!user) return;
+      try {
+        const { data: bannerFiles } = await supabase.storage
+          .from('banners')
+          .list(user.id, { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
+
+        if (bannerFiles && bannerFiles.length > 0) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('banners')
+            .getPublicUrl(`${user.id}/${bannerFiles[0].name}`);
+          setBannerUrl(publicUrl);
+        }
+      } catch (e) {
+        console.error("Banner load error", e);
+      }
+    };
+    loadBanner();
   }, [user]);
 
   if (!user) return null;
@@ -72,7 +63,7 @@ export default function ProfilePage() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
-  const totalCards = boards.reduce((acc, b) => 
+  const totalCards = boards.reduce((acc, b) =>
     acc + b.columns.reduce((colAcc, c) => colAcc + c.cards.length, 0), 0
   );
 
@@ -102,18 +93,7 @@ export default function ProfilePage() {
     try {
       const url = await uploadAvatar(file);
       if (url) {
-        const timestampedUrl = `${url}?t=${Date.now()}`;
-        
-        await supabase.auth.updateUser({
-          data: { avatar_url: timestampedUrl }
-        });
-        
-        setAvatarKey(prev => prev + 1);
         toast.success('Profile picture updated!');
-        
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
       } else {
         toast.error('Failed to upload image');
       }
@@ -153,7 +133,7 @@ export default function ProfilePage() {
         .from('banners')
         .getPublicUrl(filePath);
 
-      setBannerUrl(`${publicUrl}?t=${Date.now()}`);
+      setBannerUrl(publicUrl);
       toast.success('Banner updated!');
     } catch (error) {
       console.error('Banner upload error:', error);
@@ -169,51 +149,42 @@ export default function ProfilePage() {
       toast.error('error' in nameValidation ? nameValidation.error : 'Invalid display name');
       return;
     }
-    
+
     const bioValidation = validateInput(bioSchema, bio);
     if (!bioValidation.success) {
       toast.error('error' in bioValidation ? bioValidation.error : 'Invalid bio');
       return;
     }
-    
+
     setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          display_name: nameValidation.data,
-          bio: bioValidation.data,
-        })
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      toast.success('Profile saved!');
+      await updateProfile({
+        display_name: nameValidation.data,
+        bio: bioValidation.data,
+      });
       setIsEditing(false);
     } catch (error) {
       console.error('Error saving profile:', error);
-      toast.error('Failed to save profile');
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleCancelEdit = () => {
-    loadProfileData();
+    setDisplayName(profile.display_name || '');
+    setBio(profile.bio || '');
     setIsEditing(false);
   };
 
-  const handleStartEdit = async () => {
-    await loadProfileData();
+  const handleStartEdit = () => {
     setIsEditing(true);
   };
 
-  const avatarUrlWithCache = user.avatar ? `${user.avatar}?t=${avatarKey}` : undefined;
-
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-8">
+      {/* Banner & Avatar */}
       <div className="relative">
-        <div 
+        <div
           className={cn(
             "relative w-full h-32 sm:h-48 rounded-xl overflow-hidden cursor-pointer group",
             !bannerUrl && "bg-gradient-to-r from-primary/30 via-secondary/30 to-accent/30"
@@ -236,15 +207,16 @@ export default function ProfilePage() {
           <input ref={bannerInputRef} type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
         </div>
 
+        {/* Avatar */}
         <div className="absolute -bottom-12 left-4 sm:left-6">
           <div className="relative group">
             <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-              <AvatarImage key={avatarKey} src={avatarUrlWithCache} />
+              <AvatarImage src={user.avatar} />
               <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-primary-foreground text-2xl font-bold">
                 {getInitials(user.name)}
               </AvatarFallback>
             </Avatar>
-            <button 
+            <button
               onClick={handleAvatarClick}
               disabled={isUploading}
               className="absolute inset-0 flex items-center justify-center bg-background/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer"
@@ -256,6 +228,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* Profile Info - Name left, Edit button far right */}
       <div className="pt-14 px-1">
         <div className="flex items-center justify-between">
           <div>
@@ -263,7 +236,8 @@ export default function ProfilePage() {
             <p className="text-muted-foreground">{user.email}</p>
             {bio && !isEditing && <p className="text-sm text-muted-foreground mt-2 max-w-md">{bio}</p>}
           </div>
-          
+
+          {/* Edit Profile button - far right */}
           {!isEditing ? (
             <Button variant="outline" size="sm" onClick={handleStartEdit}>
               <Pencil className="h-4 w-4 mr-2" />
@@ -284,6 +258,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* Edit Form - Only visible when editing */}
       {isEditing && (
         <Card className="glass-card">
           <CardContent className="pt-6 space-y-4">
@@ -308,6 +283,7 @@ export default function ProfilePage() {
         </Card>
       )}
 
+      {/* Stats */}
       <Card className="glass-card">
         <CardHeader><CardTitle className="font-display text-lg">Your Activity</CardTitle></CardHeader>
         <CardContent>
@@ -320,6 +296,7 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
+      {/* Log Out */}
       <Card className="glass-card">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">

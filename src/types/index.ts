@@ -8,6 +8,8 @@ export interface User {
   createdAt: Date;
 }
 
+export type FocusMode = 'tech' | 'productive' | 'design';
+
 export interface Board {
   id: string;
   name: string;
@@ -19,6 +21,8 @@ export interface Board {
   updatedAt: Date;
   isFavorite: boolean;
   ownerId: string;
+  focusMode: FocusMode;
+  data?: any;
 }
 
 export interface Column {
@@ -72,7 +76,7 @@ export interface Label {
 
 export type Priority = 'low' | 'medium' | 'high' | 'urgent';
 
-export type BoardColor = 
+export type BoardColor =
   | 'coral'
   | 'lavender'
   | 'mint'
@@ -80,7 +84,7 @@ export type BoardColor =
   | 'peach'
   | 'rose';
 
-export type BoardTemplate = 
+export type BoardTemplate =
   | 'canvas' // Blank slate
   | 'sprint' // Agile sprint board
   | 'mosaic' // Creative project with multiple categories
@@ -102,4 +106,12 @@ export interface UserPreferences {
   showQuickCapture: boolean;
   focusModeEnabled: boolean;
   defaultBoardColor: BoardColor;
+}
+
+export interface Tool {
+  id: string;
+  name: string;
+  logo: string;
+  url: string;
+  category: string;
 }

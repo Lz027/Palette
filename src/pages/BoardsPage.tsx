@@ -6,13 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { BoardCard } from '@/components/boards/BoardCard';
 
+import { useFocus } from '@/contexts/FocusContext';
+
 export default function BoardsPage() {
   const { boards } = useBoards();
+  const { focusMode } = useFocus();
   const [searchQuery, setSearchQuery] = React.useState('');
 
   const filteredBoards = boards.filter(board =>
-    board.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    board.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    board.focusMode === focusMode &&
+    (board.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      board.description?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (

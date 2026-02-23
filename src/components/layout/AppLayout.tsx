@@ -73,7 +73,7 @@ export function AppLayout() {
             <TopBar />
             <main className={cn(
               "flex-1 overflow-auto transition-all duration-300",
-              settings.compact_mode ? "p-3 md:p-4" : "p-6"
+              settings.compact_mode ? "p-1.5 md:p-2" : "p-6"
             )}>
               <Outlet />
             </main>

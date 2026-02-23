@@ -1,16 +1,21 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  FolderKanban, 
-  Star, 
-  Settings, 
+import {
+  LayoutDashboard,
+  FolderKanban,
+  Star,
+  Settings,
   User,
   PanelLeft,
   PanelRight,
   Code,
   Palette,
   Briefcase,
+  Terminal,
+  Zap,
+  PenTool,
+  Target,
+  Coffee,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import paletteLogo from '@/assets/palette-logo.jpeg';
@@ -22,6 +27,21 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSidebar } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 
+const focusTips = {
+  productive: [
+    { icon: Coffee, text: "Take breaks every 25 minutes" },
+    { icon: Target, text: "Set 3 priorities for today" },
+  ],
+  tech: [
+    { icon: Terminal, text: "Commit code before switching tasks" },
+    { icon: Zap, text: "Test your changes frequently" },
+  ],
+  design: [
+    { icon: PenTool, text: "Save versions as you iterate" },
+    { icon: Palette, text: "Check contrast ratios" },
+  ],
+};
+
 const mainNavItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Boards', url: '/boards', icon: FolderKanban },
@@ -31,18 +51,14 @@ const mainNavItems = [
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const isOpen = state === 'expanded';
-  const { boards, focusMode } = useBoards();
-  const { focusMode: currentFocus } = useFocus();
+  const { boards } = useBoards();
+  const { focusMode } = useFocus();
 
-  // Filter boards by focus mode
-  const filteredBoards = boards.filter(b => {
-    if (currentFocus === 'design') return b.color === 'lavender' || b.color === 'rose' || b.template === 'design';
-    if (currentFocus === 'tech') return b.color === 'sky' || b.color === 'mint' || b.template === 'kanban';
-    return true; // productive shows all
-  }).slice(0, 5);
+  const favoriteBoards = boards.filter(b => b.isFavorite).slice(0, 5);
+  const currentTips = focusTips[focusMode as keyof typeof focusTips] || focusTips.productive;
 
   const getCreateAction = () => {
-    switch (currentFocus) {
+    switch (focusMode) {
       case 'tech':
         return { icon: Code, label: 'New Project', url: '/boards/new' };
       case 'design':
@@ -67,74 +83,55 @@ export function AppSidebar() {
   };
 
   return (
-    <aside 
+    <aside
       className={cn(
-        "h-screen bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] relative",
-        isOpen ? "w-64" : "w-20"
+        "h-screen bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300",
+        isOpen ? "w-64" : "w-14"
       )}
     >
-      {/* Toggle Button — Moved inside */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={toggleSidebar}
-        className={cn(
-          "absolute top-4 h-7 w-7 rounded-md border border-sidebar-border bg-background/80 backdrop-blur-sm shadow-sm hover:bg-background hover:scale-105 transition-all duration-300 z-50",
-          isOpen ? "right-3" : "right-3"
-        )}
-      >
-        {isOpen ? <PanelLeft className="h-3.5 w-3.5" /> : <PanelRight className="h-3.5 w-3.5" />}
-      </Button>
+      {/* Toggle Button at top - Modern style like mobile */}
+      <div className="flex items-center justify-center p-2 border-b border-sidebar-border">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSidebar}
+          className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+        >
+          {isOpen ? <PanelLeft className="h-4 w-4" /> : <PanelRight className="h-4 w-4" />}
+        </Button>
+      </div>
 
-      {/* Header */}
+      {/* Logo Section - Visible when expanded */}
       <div className={cn(
-        "border-b border-sidebar-border flex items-center gap-3 transition-all duration-500",
-        isOpen ? "p-4" : "p-3 justify-center"
+        "transition-all duration-300 overflow-hidden",
+        isOpen ? "h-16 opacity-100" : "h-0 opacity-0"
       )}>
-        <Link to="/dashboard" className={cn(
-          "flex items-center shrink-0 transition-transform duration-300 hover:scale-105",
-          !isOpen && "justify-center"
-        )}>
-          <img 
-            src={paletteLogo} 
-            alt="Palette" 
-            className={cn(
-              "rounded-lg object-cover transition-all duration-500",
-              isOpen ? "w-10 h-10" : "w-10 h-10"
-            )}
+        <Link to="/dashboard" className="flex items-center gap-3 px-4 py-3">
+          <img
+            src={paletteLogo}
+            alt="Palette"
+            className="w-8 h-8 rounded-lg object-cover shrink-0"
           />
+          <span className="font-bold text-lg tracking-tight">PALETTE</span>
         </Link>
-        
-        {isOpen && (
-          <span className="font-bold text-lg animate-in fade-in slide-in-from-left-2 duration-500">
-            PALETTE
-          </span>
-        )}
       </div>
 
       {/* Navigation */}
       <ScrollArea className="flex-1 py-4">
         <nav className={cn("space-y-1", isOpen ? "px-3" : "px-2")}>
-          {mainNavItems.map((item, index) => (
+          {mainNavItems.map((item) => (
             <NavLink
               key={item.title}
               to={item.url}
               className={cn(
-                "flex items-center gap-3 rounded-lg transition-all duration-300 ease-out",
-                "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-1",
-                "active:scale-95",
-                isOpen ? "px-3 py-2.5" : "justify-center py-2.5",
-                "opacity-0 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-forwards"
+                "flex items-center gap-3 rounded-lg transition-all duration-200 active:scale-95",
+                isOpen ? "px-3 py-2" : "justify-center py-2",
+                "text-muted-foreground hover:text-foreground hover:bg-muted"
               )}
-              style={{ animationDelay: `${index * 50}ms` }}
-              activeClassName="bg-sidebar-accent text-sidebar-primary font-medium shadow-sm"
+              activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
             >
-              <item.icon className="h-5 w-5 shrink-0 transition-transform duration-300 group-hover:rotate-12" />
-              {isOpen && (
-                <span className="text-sm animate-in fade-in duration-300">
-                  {item.title}
-                </span>
-              )}
+              <item.icon className={cn("shrink-0", isOpen ? "h-5 w-5" : "h-[18px] w-[18px]")} />
+              {isOpen && <span className="text-sm">{item.title}</span>}
             </NavLink>
           ))}
 
@@ -142,36 +139,46 @@ export function AppSidebar() {
           <NavLink
             to={createAction.url}
             className={cn(
-              "flex items-center gap-3 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 mt-2 transition-all duration-300",
-              "hover:shadow-md hover:translate-x-1 active:scale-95",
-              isOpen ? "px-3 py-2.5" : "justify-center py-2.5"
+              "flex items-center gap-3 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 mt-2 transition-all duration-200 active:scale-95",
+              isOpen ? "px-3 py-2" : "justify-center py-2"
             )}
           >
-            <createAction.icon className="h-5 w-5 shrink-0" />
-            {isOpen && <span className="text-sm">{createAction.label}</span>}
+            <createAction.icon className={cn("shrink-0", isOpen ? "h-5 w-5" : "h-[18px] w-[18px]")} />
+            {isOpen && <span className="text-sm font-medium">{createAction.label}</span>}
           </NavLink>
 
-          {/* Filtered Favorites by Focus Mode */}
-          {isOpen && filteredBoards.length > 0 && (
-            <div className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <p className="px-3 text-xs font-medium text-muted-foreground uppercase mb-2 tracking-wider">
-                {currentFocus === 'tech' ? 'Dev Projects' : currentFocus === 'design' ? 'Design Boards' : 'Recent Boards'}
-              </p>
+          {/* Favorites */}
+          {isOpen && favoriteBoards.length > 0 && (
+            <div className="mt-4 animate-in fade-in slide-in-from-left-2 duration-300">
+              <p className="px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Favorites</p>
               <div className="space-y-0.5">
-                {filteredBoards.map((board, index) => (
+                {favoriteBoards.map((board) => (
                   <NavLink
                     key={board.id}
                     to={`/boards/${board.id}`}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent text-sm transition-all duration-300",
-                      "hover:translate-x-1 active:scale-95 opacity-0 animate-in fade-in slide-in-from-left-2 duration-300 fill-mode-forwards"
-                    )}
-                    style={{ animationDelay: `${(index + 3) * 50}ms` }}
-                    activeClassName="bg-sidebar-accent shadow-sm"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent text-sm transition-colors"
+                    activeClassName="bg-sidebar-accent"
                   >
-                    <div className={cn("w-2 h-2 rounded-full animate-pulse", getBoardColorClass(board.color))} />
+                    <div className={cn("w-2 h-2 rounded-full shrink-0", getBoardColorClass(board.color))} />
                     <span className="truncate">{board.name}</span>
                   </NavLink>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tips (expanded only) */}
+          {isOpen && (
+            <div className="mt-6 px-3 animate-in fade-in slide-in-from-left-2 duration-500">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                {focusMode.charAt(0).toUpperCase() + focusMode.slice(1)} Tips
+              </p>
+              <div className="space-y-2">
+                {currentTips.map((tip, index) => (
+                  <div key={index} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-sidebar-accent/50 border border-sidebar-border/50">
+                    <tip.icon className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">{tip.text}</p>
+                  </div>
                 ))}
               </div>
             </div>
@@ -179,57 +186,51 @@ export function AppSidebar() {
         </nav>
       </ScrollArea>
 
-      {/* External Links */}
+      {/* External Links - Shoseki Only */}
       <div className={cn("border-t border-sidebar-border py-3 space-y-2", isOpen ? "px-3" : "px-2")}>
+        {/* Shoseki - Black bg, transparent logo */}
         <a
           href="https://shoseki.vercel.app"
           target="_blank"
           rel="noopener noreferrer"
           className={cn(
-            "flex items-center gap-3 rounded-xl bg-black hover:bg-gray-900 transition-all duration-300",
-            "hover:shadow-lg hover:-translate-y-0.5",
-            isOpen ? "px-4 py-3" : "justify-center py-3"
+            "flex items-center gap-3 rounded-lg bg-black hover:bg-gray-900 transition-all",
+            isOpen ? "px-3 py-2" : "justify-center py-2"
           )}
         >
-          <img 
-            src={shosekiLogo} 
-            alt="Shoseki" 
-            className={cn("object-contain transition-transform duration-300", isOpen ? "w-8 h-8" : "w-6 h-6")}
-            style={{ backgroundColor: 'transparent' }}
+          <img
+            src={shosekiLogo}
+            alt="Shoseki"
+            className={cn("object-contain rounded bg-white/10", isOpen ? "w-6 h-6" : "w-5 h-5")}
           />
           {isOpen && (
-            <div className="flex flex-col animate-in fade-in duration-300">
-              <span className="text-sm font-bold text-white">Shoseki</span>
-              <span className="text-xs text-gray-400 uppercase tracking-wide">AI Directory</span>
-            </div>
+            <span className="text-sm font-semibold text-white">Shoseki</span>
           )}
         </a>
       </div>
 
       {/* Footer */}
-      <div className={cn("border-t border-sidebar-border py-3", isOpen ? "px-3" : "px-2")}>
+      <div className={cn("border-t border-sidebar-border py-2 px-2 space-y-1", !isOpen && "pb-4")}>
         <NavLink
           to="/profile"
           className={cn(
-            "flex items-center gap-3 rounded-lg hover:bg-sidebar-accent transition-all duration-300",
-            "hover:translate-x-1 active:scale-95",
+            "flex items-center gap-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors active:scale-95",
             isOpen ? "px-3 py-2" : "justify-center py-2"
           )}
-          activeClassName="bg-sidebar-accent shadow-sm"
+          activeClassName="bg-primary/10 text-primary"
         >
-          <User className="h-5 w-5 shrink-0" />
+          <User className={cn("shrink-0", isOpen ? "h-5 w-5" : "h-[18px] w-[18px]")} />
           {isOpen && <span className="text-sm">Profile</span>}
         </NavLink>
         <NavLink
           to="/settings"
           className={cn(
-            "flex items-center gap-3 rounded-lg hover:bg-sidebar-accent mt-1 transition-all duration-300",
-            "hover:translate-x-1 active:scale-95",
+            "flex items-center gap-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors active:scale-95",
             isOpen ? "px-3 py-2" : "justify-center py-2"
           )}
-          activeClassName="bg-sidebar-accent shadow-sm"
+          activeClassName="bg-primary/10 text-primary"
         >
-          <Settings className="h-5 w-5 shrink-0" />
+          <Settings className={cn("shrink-0", isOpen ? "h-5 w-5" : "h-[18px] w-[18px]")} />
           {isOpen && <span className="text-sm">Settings</span>}
         </NavLink>
       </div>
